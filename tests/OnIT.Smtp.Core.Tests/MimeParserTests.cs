@@ -52,7 +52,9 @@ public class MimeParserTests
 
         var message = OutboundMessageBuilder.Build("from@example.com", new[] { "to@example.com" }, Encoding.ASCII.GetBytes(raw));
 
-        Assert.Equal("Body text\r\n", message.Body);
+        // Per RFC 2046, the CRLF immediately before a boundary delimiter belongs to the
+        // delimiter, not the preceding part's content, so it's correctly stripped here.
+        Assert.Equal("Body text", message.Body);
         Assert.Single(message.Attachments);
         Assert.Equal("scan.pdf", message.Attachments[0].FileName);
         Assert.Equal(attachmentBytes, message.Attachments[0].Content);
