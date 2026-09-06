@@ -8,4 +8,16 @@
     <Product>OnIT-SMTP</Product>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
+
+  <!-- ImplicitUsings only adds the standard classlib set (System, System.Collections.Generic,
+       System.IO, System.Linq, System.Threading.Tasks) for plain Microsoft.NET.Sdk projects.
+       UseWPF (and UseWindowsForms) projects opt out of that set, which caused CS0103 for
+       Path/File/Directory in the config tool. Declared explicitly here so every project gets
+       the same baseline regardless of UseWPF/UseWindowsForms. -->
+  <ItemGroup>
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.IO" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
 </Project>
