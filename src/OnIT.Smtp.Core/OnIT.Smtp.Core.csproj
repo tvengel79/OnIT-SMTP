@@ -5,7 +5,7 @@
     <RootNamespace>OnIT.Smtp.Core</RootNamespace>
     <AssemblyName>OnIT.Smtp.Core</AssemblyName>
     <!-- Kept cross-platform (no *-windows TFM) on purpose: this library is shared
-         with the Part 2 Docker/Linux bridge, including secret protection --
+         with the Part 2 Docker/Linux bridge, including secret protection.
          PortableSecretProtector uses a portable, non-machine-bound key file (AES-256-GCM)
          rather than an OS-specific mechanism like Windows DPAPI, precisely so a config
          directory can be copied to another machine (or into the Part 2 container) and its
