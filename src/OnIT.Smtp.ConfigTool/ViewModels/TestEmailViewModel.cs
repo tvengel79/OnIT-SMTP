@@ -66,7 +66,7 @@ public partial class TestEmailViewModel : ObservableObject
             }
             else
             {
-                var credentialFactory = new GraphCredentialFactory(new DpapiSecretProtector());
+                var credentialFactory = new GraphCredentialFactory(new PortableSecretProtector());
                 var mailService = new GraphMailService(credentialFactory);
 
                 await mailService.SendAsync(config.EntraApp, new OutboundMessage

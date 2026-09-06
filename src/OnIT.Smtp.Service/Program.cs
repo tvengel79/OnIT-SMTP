@@ -26,7 +26,7 @@ try
         {
             services.AddSingleton(liveLogSink);
             services.AddSingleton(configStore);
-            services.AddSingleton<ISecretProtector, DpapiSecretProtector>();
+            services.AddSingleton<ISecretProtector, PortableSecretProtector>();
             services.AddSingleton<GraphCredentialFactory>();
             services.AddSingleton<GraphMailService>();
             services.AddHostedService<RelayWorker>();

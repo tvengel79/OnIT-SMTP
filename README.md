@@ -100,8 +100,21 @@ own tenant with your own app registration in the meantime.
 - A live view streams over a local named pipe to the config tool's *Logging* tab whenever
   it's open, seeded with recent history so you don't start from a blank screen.
 
+## Secret protection
+
+The Entra app's client secret is encrypted at rest with AES-256-GCM
+(`PortableSecretProtector`), using a key file (`%ProgramData%\OnIT-SMTP\secret.key`) rather
+than an OS/machine-bound mechanism like Windows DPAPI. That's deliberate: copy the whole
+`%ProgramData%\OnIT-SMTP` folder (config.json **and** secret.key together) to another
+machine -- a restore, a migration, seeding the Part 2 container -- and the secret decrypts
+there with no re-entry and no redoing Entra admin consent. The key file's NTFS ACLs (best
+effort, restricted to Administrators/SYSTEM) are the actual protection boundary, not machine
+identity. Copying config.json *without* secret.key leaves the secret as unusable ciphertext.
+
 ## Docker export (Part 2 prep)
 
 The *Docker Export* tab writes the current Entra app, allowed senders, IP allow rules, and
-SMTP settings as JSON, with the client secret decrypted to plain text (the container can't
-read this machine's DPAPI keys) -- transport that file securely to the container host.
+SMTP settings as JSON, optionally with the client secret decrypted to plain text -- handy
+when you'd rather hand the container a single self-contained file/env var than also copy
+`secret.key`. Since protection here isn't machine-bound, copying config.json + secret.key
+directly to the container works too, without this export step at all.

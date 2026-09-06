@@ -8,10 +8,14 @@ using OnIT.Smtp.ConfigTool.Services;
 namespace OnIT.Smtp.ConfigTool.ViewModels;
 
 /// <summary>
-/// Exports the current configuration in the shape the Part 2 Docker bridge consumes:
-/// the same AppConfiguration JSON, but with the client secret decrypted to plain text
-/// (the container has no access to this machine's DPAPI keys) so the operator can hand
-/// it to the container via a mounted config file or environment variables.
+/// Exports the current configuration in the shape the Part 2 Docker bridge consumes: the
+/// same AppConfiguration JSON, optionally with the client secret decrypted to plain text
+/// so the operator can hand it to the container via a mounted file or environment variable
+/// without also having to copy the key file. Because secret protection here is portable
+/// (see PortableSecretProtector -- not tied to this machine like DPAPI would be), the other
+/// option is to skip this export entirely and just copy %ProgramData%\OnIT-SMTP\config.json
+/// together with its secret.key straight to the container: the ciphertext decrypts there
+/// unchanged.
 /// </summary>
 public partial class DockerExportViewModel : ObservableObject
 {

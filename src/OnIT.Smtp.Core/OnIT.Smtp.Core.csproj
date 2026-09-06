@@ -5,9 +5,11 @@
     <RootNamespace>OnIT.Smtp.Core</RootNamespace>
     <AssemblyName>OnIT.Smtp.Core</AssemblyName>
     <!-- Kept cross-platform (no *-windows TFM) on purpose: this library is shared
-         with the Part 2 Docker/Linux bridge. Windows-only functionality (DPAPI)
-         is isolated behind ISecretProtector so the Linux bridge can supply an
-         alternate implementation. -->
+         with the Part 2 Docker/Linux bridge, including secret protection --
+         PortableSecretProtector uses a portable, non-machine-bound key file (AES-256-GCM)
+         rather than an OS-specific mechanism like Windows DPAPI, precisely so a config
+         directory can be copied to another machine (or into the Part 2 container) and its
+         encrypted client secret still decrypts there without re-entering anything. -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageReference Include="Serilog" Version="4.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

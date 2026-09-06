@@ -3,8 +3,7 @@
   <assemblyIdentity version="1.0.0.0" name="OnIT.Smtp.ConfigTool"/>
 
   <!-- Administrator rights are required to read/write %ProgramData%\OnIT-SMTP alongside the
-       LocalSystem-run service, to control the Windows Service (start/stop/install), and to
-       use machine-scoped DPAPI for the stored client secret. -->
+       LocalSystem-run service and to control the Windows Service (start/stop/install). -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>

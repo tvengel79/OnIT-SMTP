@@ -14,7 +14,7 @@ public sealed class ConfigurationContext
     public static ConfigurationContext Instance { get; } = new();
 
     private readonly ConfigStore _store = new();
-    private readonly ISecretProtector _secretProtector = new DpapiSecretProtector();
+    private readonly ISecretProtector _secretProtector = new PortableSecretProtector();
 
     public AppConfiguration Current { get; private set; } = new();
 

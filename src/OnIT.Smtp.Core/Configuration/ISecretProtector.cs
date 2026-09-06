@@ -1,10 +1,11 @@
 namespace OnIT.Smtp.Core.Configuration;
 
 /// <summary>
-/// Encrypts/decrypts secrets (client secrets) at rest. The Windows implementation uses
-/// DPAPI scoped to the local machine (so the service, running as LocalSystem/a service
-/// account, can decrypt independently of any interactive user). Part 2's Linux/Docker
-/// bridge supplies its own implementation (e.g. a key file or container secret).
+/// Encrypts/decrypts secrets (client secrets) at rest. Implementations must be portable --
+/// not bound to a specific machine, user profile, or OS keystore -- so a config directory
+/// can be copied to another machine (a restore, a migration, seeding the Part 2 container)
+/// and still decrypt. See <see cref="PortableSecretProtector"/>, the default implementation
+/// used by both the Windows Service and the config tool.
 /// </summary>
 public interface ISecretProtector
 {

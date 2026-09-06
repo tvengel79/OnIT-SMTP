@@ -29,7 +29,11 @@ public sealed class EntraAppSettings
 
     public GraphAuthMode AuthMode { get; set; } = GraphAuthMode.ClientSecret;
 
-    /// <summary>DPAPI-protected (base64) client secret. Null when using a certificate.</summary>
+    /// <summary>
+    /// Portably encrypted (base64) client secret -- see <see cref="ISecretProtector"/>.
+    /// Travels safely with config.json to another machine (the paired key file must come
+    /// along too). Null when using a certificate.
+    /// </summary>
     public string? ProtectedClientSecret { get; set; }
 
     public DateTimeOffset? ClientSecretExpiresOn { get; set; }
