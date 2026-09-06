@@ -1,0 +1,59 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.LoggingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Logging" Style="{StaticResource SectionHeader}"/>
+
+        <GroupBox Grid.Row="1" Header="Settings">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Width="220" Margin="0,0,16,0">
+                        <TextBlock Text="Verbosity"/>
+                        <ComboBox ItemsSource="{Binding VerbosityLevels}" SelectedItem="{Binding Verbosity}"/>
+                    </StackPanel>
+                    <StackPanel Width="140" Margin="0,0,16,0">
+                        <TextBlock Text="Retained days"/>
+                        <TextBox Text="{Binding RetainedDays, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Bottom">
+                        <CheckBox Content="Enable live viewer" IsChecked="{Binding EnableLiveViewer}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Text="Log file directory"/>
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right" Content="Browse..." Command="{Binding BrowseLogDirectoryCommand}"/>
+                    <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenLogDirectoryCommand}"/>
+                    <TextBox Text="{Binding LogDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="Save" Command="{Binding SaveCommand}"/>
+                    <TextBlock Text="{Binding IsConnectedToService, StringFormat='Live connection to service: {0}'}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Live log">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Bottom" Content="Clear" Command="{Binding ClearLiveViewCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                <ListView ItemsSource="{Binding LiveEntries}">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Time" Width="160" DisplayMemberBinding="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss'}"/>
+                            <GridViewColumn Header="Level" Width="90" DisplayMemberBinding="{Binding Level}"/>
+                            <GridViewColumn Header="Message" Width="640" DisplayMemberBinding="{Binding Message}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </DockPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

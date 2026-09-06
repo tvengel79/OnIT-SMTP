@@ -1,0 +1,39 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.EntraAppView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="16">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+            <TextBlock Text="Entra App Registration" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Creates the Entra ID app registration OnIT-SMTP uses to call Microsoft Graph, activates the Mail.Send application permission, and attempts to grant admin consent automatically."/>
+
+            <GroupBox Header="Current status">
+                <StackPanel>
+                    <TextBlock Text="{Binding IsConfigured, StringFormat='Configured: {0}'}"/>
+                    <TextBlock Text="{Binding ApplicationId, StringFormat='Application (client) ID: {0}'}" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding AdminConsentGranted, StringFormat='Admin consent granted: {0}'}" Margin="0,4,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasPendingConsent, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Admin consent is still pending. " VerticalAlignment="Center"/>
+                        <Button Content="Open consent link" Command="{Binding OpenConsentUrlCommand}"/>
+                        <Button Content="Check again" Command="{Binding CheckConsentCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Create app registration">
+                <StackPanel>
+                    <TextBlock Text="Tenant ID or domain (e.g. contoso.onmicrosoft.com)"/>
+                    <TextBox Text="{Binding TenantId, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Text="Display name"/>
+                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
+                    <CheckBox Content="Sign in with a device code instead of a browser popup" IsChecked="{Binding UseDeviceCodeSignIn}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Create app" Command="{Binding CreateAppCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
+                        <Button Content="Delete app" Command="{Binding DeleteAppCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

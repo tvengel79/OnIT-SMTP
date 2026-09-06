@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>OnIT.Smtp.Core</RootNamespace>
+    <AssemblyName>OnIT.Smtp.Core</AssemblyName>
+    <!-- Kept cross-platform (no *-windows TFM) on purpose: this library is shared
+         with the Part 2 Docker/Linux bridge. Windows-only functionality (DPAPI)
+         is isolated behind ISecretProtector so the Linux bridge can supply an
+         alternate implementation. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graph" Version="5.61.0" />
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    <PackageReference Include="Serilog" Version="4.0.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    # WPF and the Windows Service TFMs (net8.0-windows) require a Windows runner.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore OnIT-SMTP.sln
+
+      - name: Build
+        run: dotnet build OnIT-SMTP.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/OnIT.Smtp.Core.Tests/OnIT.Smtp.Core.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"

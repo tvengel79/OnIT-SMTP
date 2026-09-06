@@ -1,0 +1,51 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.AllowedSendersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Allowed Senders" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Restrict which mailboxes may be used as the sender for relayed mail. Browse the tenant's mailbox-enabled users below and add the ones that should be allowed to send."/>
+            <CheckBox Content="Restrict relaying to the senders listed below" IsChecked="{Binding RestrictToAllowedSenders}"/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Browse mailbox users">
+            <StackPanel>
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right" Content="Search" Command="{Binding SearchUsersCommand}"/>
+                    <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                </DockPanel>
+                <DataGrid ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedSearchResult}"
+                          AutoGenerateColumns="False" IsReadOnly="True" Height="160" Margin="0,8,0,8">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Display name" Binding="{Binding DisplayName}" Width="*"/>
+                        <DataGridTextColumn Header="User principal name" Binding="{Binding UserPrincipalName}" Width="2*"/>
+                        <DataGridTextColumn Header="Enabled" Binding="{Binding AccountEnabled}" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Button Content="Add selected" Command="{Binding AddSelectedCommand}" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Allowed senders">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Bottom" Content="Remove selected" Command="{Binding RemoveSelectedCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                <DataGrid ItemsSource="{Binding AllowedSenders}" SelectedItem="{Binding SelectedAllowedSender}"
+                          AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Display name" Binding="{Binding DisplayName}" Width="*"/>
+                        <DataGridTextColumn Header="User principal name" Binding="{Binding UserPrincipalName}" Width="2*"/>
+                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

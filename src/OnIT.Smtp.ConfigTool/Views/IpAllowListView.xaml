@@ -1,0 +1,66 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.IpAllowListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="IP Allow List" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Only connections from an address, range, or subnet listed here may relay mail through this server. An empty list denies everyone."/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Add a rule">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Type:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox ItemsSource="{Binding RuleKinds}" SelectedItem="{Binding NewRuleKind}" Width="120"/>
+                </StackPanel>
+
+                <TextBlock Text="Address / network"/>
+                <TextBox Text="{Binding NewAddress, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <StackPanel Orientation="Horizontal" Visibility="{Binding NewRuleKind, Converter={StaticResource EnumToVis}, ConverterParameter=Range}">
+                    <StackPanel Width="300" Margin="0,0,8,0">
+                        <TextBlock Text="Range end"/>
+                        <TextBox Text="{Binding NewRangeEnd, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Visibility="{Binding NewRuleKind, Converter={StaticResource EnumToVis}, ConverterParameter=Cidr}">
+                    <StackPanel Width="120">
+                        <TextBlock Text="Prefix length"/>
+                        <TextBox Text="{Binding NewPrefixLength, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Text="Description (optional)"/>
+                <TextBox Text="{Binding NewDescription, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Button Content="Add rule" Command="{Binding AddRuleCommand}" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Configured rules">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="Remove selected" Command="{Binding RemoveSelectedCommand}"/>
+                    <Button Content="Toggle enabled" Command="{Binding ToggleSelectedEnabledCommand}"/>
+                </StackPanel>
+                <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="Auto"/>
+                        <DataGridTextColumn Header="Value" Binding="{Binding .}" Width="*"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*"/>
+                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

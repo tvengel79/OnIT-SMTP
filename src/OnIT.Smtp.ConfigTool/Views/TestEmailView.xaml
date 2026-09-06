@@ -1,0 +1,26 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.TestEmailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="16">
+        <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+            <TextBlock Text="Send a Test Email" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Sends a message via Microsoft Graph using the configured app registration -- through the running service if it's reachable, otherwise directly from this tool -- to confirm everything is wired up correctly."/>
+
+            <TextBlock Text="From (must be one of the allowed senders / a mailbox the app can send as)"/>
+            <ComboBox ItemsSource="{Binding AvailableSenders}" Text="{Binding From, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"/>
+
+            <TextBlock Text="To"/>
+            <TextBox Text="{Binding To, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="Subject"/>
+            <TextBox Text="{Binding Subject, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="Body"/>
+            <TextBox Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="100" TextWrapping="Wrap"/>
+
+            <Button Content="Send test email" Command="{Binding SendCommand}" HorizontalAlignment="Left" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

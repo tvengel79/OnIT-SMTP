@@ -1,0 +1,16 @@
+<Application x:Class="OnIT.Smtp.ConfigTool.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:OnIT.Smtp.ConfigTool.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Views/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:InverseBooleanConverter x:Key="InverseBool"/>
+            <conv:EnumToVisibilityConverter x:Key="EnumToVis"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

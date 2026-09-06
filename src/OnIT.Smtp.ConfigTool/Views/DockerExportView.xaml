@@ -1,0 +1,19 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.DockerExportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="16">
+        <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+            <TextBlock Text="Docker Bridge Export" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Exports the current Entra app, allowed senders, IP allow list, and SMTP settings as a config file the Part 2 Docker bridge (e.g. running on a NAS) can be seeded with."/>
+
+            <CheckBox Content="Include the client secret in plain text (required for the container to authenticate)" IsChecked="{Binding IncludePlainTextSecret}"/>
+
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="The exported file contains a plaintext credential when the option above is checked. Transfer it securely (e.g. directly onto the NAS) and delete the local copy afterwards."/>
+
+            <Button Content="Export..." Command="{Binding ExportCommand}" HorizontalAlignment="Left"/>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

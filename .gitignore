@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+out/
+publish/
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+## Test results
+TestResults/
+*.trx
+
+## Misc
+*.log
+.DS_Store

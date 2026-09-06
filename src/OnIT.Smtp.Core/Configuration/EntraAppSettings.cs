@@ -1,0 +1,45 @@
+namespace OnIT.Smtp.Core.Configuration;
+
+public enum GraphAuthMode
+{
+    ClientSecret,
+    Certificate
+}
+
+/// <summary>
+/// The Entra ID (Azure AD) app registration used to call Microsoft Graph for
+/// sending mail. The client secret is stored encrypted at rest via
+/// <see cref="ISecretProtector"/> -- <see cref="ProtectedClientSecret"/> is the
+/// ciphertext, never the plain value.
+/// </summary>
+public sealed class EntraAppSettings
+{
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(ApplicationId) && !string.IsNullOrWhiteSpace(TenantId);
+
+    public string TenantId { get; set; } = string.Empty;
+    public string ApplicationId { get; set; } = string.Empty;
+
+    /// <summary>Object ID of the app registration (needed for delete/permission calls).</summary>
+    public string ApplicationObjectId { get; set; } = string.Empty;
+
+    /// <summary>Object ID of the associated service principal (needed for admin-consent app role assignment).</summary>
+    public string ServicePrincipalObjectId { get; set; } = string.Empty;
+
+    public string DisplayName { get; set; } = "OnIT-SMTP Bridge";
+
+    public GraphAuthMode AuthMode { get; set; } = GraphAuthMode.ClientSecret;
+
+    /// <summary>DPAPI-protected (base64) client secret. Null when using a certificate.</summary>
+    public string? ProtectedClientSecret { get; set; }
+
+    public DateTimeOffset? ClientSecretExpiresOn { get; set; }
+
+    /// <summary>Certificate thumbprint in the local machine store, when AuthMode == Certificate.</summary>
+    public string? CertificateThumbprint { get; set; }
+
+    /// <summary>True once the Mail.Send application permission has been granted admin consent.</summary>
+    public bool AdminConsentGranted { get; set; }
+
+    /// <summary>Set when consent could not be granted automatically and must be completed via the portal/URL.</summary>
+    public string? PendingAdminConsentUrl { get; set; }
+}
