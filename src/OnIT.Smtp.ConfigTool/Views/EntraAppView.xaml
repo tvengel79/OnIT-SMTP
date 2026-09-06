@@ -11,11 +11,15 @@
                 <StackPanel>
                     <TextBlock Text="{Binding IsConfigured, StringFormat='Configured: {0}'}"/>
                     <TextBlock Text="{Binding ApplicationId, StringFormat='Application (client) ID: {0}'}" Margin="0,4,0,0"/>
-                    <TextBlock Text="{Binding AdminConsentGranted, StringFormat='Admin consent granted: {0}'}" Margin="0,4,0,0"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasPendingConsent, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="Admin consent is still pending. " VerticalAlignment="Center"/>
-                        <Button Content="Open consent link" Command="{Binding OpenConsentUrlCommand}"/>
-                        <Button Content="Check again" Command="{Binding CheckConsentCommand}"/>
+                    <TextBlock Text="{Binding AdminConsentGranted, StringFormat='Admin consent granted: {0}'}" Margin="0,4,0,8"/>
+
+                    <StackPanel Visibility="{Binding CanOpenConsentUrl, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="Opens the standard Microsoft consent page in your browser. Sign in as (or already be signed in as) a Global or Application Administrator for this tenant and click Accept -- that's the whole flow."/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Grant consent in browser" Command="{Binding OpenConsentUrlCommand}"/>
+                            <Button Content="Check again" Command="{Binding CheckConsentCommand}"/>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </GroupBox>
@@ -27,6 +31,9 @@
                     <TextBlock Text="Display name"/>
                     <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
                     <CheckBox Content="Sign in with a device code instead of a browser popup" IsChecked="{Binding UseDeviceCodeSignIn}"/>
+                    <CheckBox IsChecked="{Binding AttemptAutomaticConsent}">
+                        <TextBlock Text="Try to grant admin consent automatically first (uncheck to always use the browser Accept flow instead)" TextWrapping="Wrap" MaxWidth="620"/>
+                    </CheckBox>
 
                     <Expander Header="Advanced: use my own sign-in app instead of Microsoft's" Margin="0,0,0,8">
                         <StackPanel Margin="0,8,0,0">

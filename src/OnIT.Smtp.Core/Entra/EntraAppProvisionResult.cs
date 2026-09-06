@@ -14,8 +14,10 @@ public sealed class EntraAppProvisionResult
     public bool AdminConsentGranted { get; init; }
 
     /// <summary>
-    /// Set when the signed-in account lacked rights to grant admin consent directly.
-    /// The operator (or a Global/Application Administrator) must open this URL and approve.
+    /// The standard Microsoft admin-consent URL for this app, always populated regardless of
+    /// whether automatic consent succeeded: opening it in a browser and signing in as (or
+    /// already being signed in as) a Global/Application Administrator who clicks Accept grants
+    /// consent for the whole tenant without needing any Graph API rights on that session.
     /// </summary>
-    public string? PendingAdminConsentUrl { get; init; }
+    public required string AdminConsentUrl { get; init; }
 }

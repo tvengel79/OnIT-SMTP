@@ -44,6 +44,11 @@ public sealed class EntraAppSettings
     /// <summary>True once the Mail.Send application permission has been granted admin consent.</summary>
     public bool AdminConsentGranted { get; set; }
 
-    /// <summary>Set when consent could not be granted automatically and must be completed via the portal/URL.</summary>
-    public string? PendingAdminConsentUrl { get; set; }
+    /// <summary>
+    /// The standard Microsoft admin-consent URL for this app. Always available once the app
+    /// exists -- opening it and clicking Accept as a Global/Application Administrator is the
+    /// simplest way to (re-)grant consent, regardless of whether it was already attempted
+    /// automatically.
+    /// </summary>
+    public string? AdminConsentUrl { get; set; }
 }

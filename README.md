@@ -76,11 +76,27 @@ happens inside the target customer's own tenant:
    `AppRoleAssignment.ReadWrite.All`, `Directory.Read.All`, and `User.Read.All`. Because
    those are high-privilege scopes, the signed-in account needs to be a Global/Application
    Administrator in that tenant to consent (a one-time click, first sign-in only).
-3. Once signed in, the config tool creates the actual relay app registration, activates the
-   `Mail.Send` application permission on it, and grants its admin consent -- all within that
-   same tenant, and repeated independently for every customer.
+3. Once signed in, the config tool creates the actual relay app registration and activates
+   the `Mail.Send` application permission on it, then grants that permission's admin consent
+   -- all within that same tenant, and repeated independently for every customer.
 
-If an operator would rather their own branding show on that one-time consent screen instead
+### Granting the Mail.Send admin consent
+
+Two ways to complete that last step, both available on the Entra App tab:
+
+- **Automatically** (checked by default) -- the tool tries to grant consent directly via the
+  Graph API using the signed-in account's own rights. Works out of the box for a Global
+  Administrator in most tenants, but can fail depending on tenant policy (Conditional
+  Access, restricted admin units, etc.), since it needs Graph write access the sign-in
+  session may not have.
+- **Browser consent** (always available, and the fallback if the automatic attempt fails) --
+  click **Grant consent in browser**, which opens the standard Microsoft admin-consent page.
+  Sign in (or already be signed in) as a Global or Application Administrator and click
+  Accept -- that's the entire flow, no Graph permissions on the sign-in session required.
+  Click **Check again** afterwards to confirm. Uncheck "Try to grant admin consent
+  automatically first" before creating the app to skip straight to this path.
+
+If an operator would rather their own branding show on that one-time sign-in screen instead
 of Microsoft's, they can register a single-tenant app themselves in the customer's tenant
 (Entra portal > App registrations > New > "Accounts in this organizational directory only",
 a **Mobile and desktop applications** platform with redirect URI `http://localhost`, and the

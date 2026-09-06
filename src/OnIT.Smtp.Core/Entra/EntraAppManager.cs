@@ -21,7 +21,24 @@ public sealed class EntraAppManager
         _logger = logger;
     }
 
-    public async Task<EntraAppProvisionResult> CreateAppAsync(string tenantId, string displayName, CancellationToken ct = default)
+    /// <summary>
+    /// Creates the app registration, service principal, client secret, and required Mail.Send
+    /// permission, then arranges for admin consent.
+    /// </summary>
+    /// <param name="attemptAutomaticConsent">
+    /// When true (the default), first tries to grant consent directly via the Graph API using
+    /// the signed-in account's own rights -- this needs no further action if it works, but
+    /// requires the account to hold a role Graph accepts for app-role assignment (Global
+    /// Administrator or Privileged Role Administrator; Application Administrator alone is
+    /// sometimes not enough, depending on tenant policy), which can fail unpredictably. When
+    /// false, that attempt is skipped entirely and only the browser consent URL is returned --
+    /// the simpler, more reliable path: the operator opens it, is prompted to sign in (or
+    /// already is) as a Global/Application Administrator, and clicks Accept. Either way, the
+    /// returned <see cref="EntraAppProvisionResult.AdminConsentUrl"/> is always populated so
+    /// the caller can offer the browser option regardless of how consent was (or wasn't)
+    /// granted automatically.
+    /// </param>
+    public async Task<EntraAppProvisionResult> CreateAppAsync(string tenantId, string displayName, bool attemptAutomaticConsent = true, CancellationToken ct = default)
     {
         _logger.LogInformation("Looking up the Microsoft Graph service principal in this tenant.");
         var graphServicePrincipal = await FindMicrosoftGraphServicePrincipalAsync(ct)
@@ -68,8 +85,9 @@ public sealed class EntraAppManager
             }
         }, cancellationToken: ct) ?? throw new InvalidOperationException("Graph did not return the created client secret.");
 
-        var (consentGranted, consentUrl) = await TryGrantAdminConsentAsync(
-            graphServicePrincipal.Id!, servicePrincipal.Id!, mailSendRole.Id.Value, tenantId, application.AppId!, ct);
+        var consentUrl = BuildAdminConsentUrl(tenantId, application.AppId!);
+        var consentGranted = attemptAutomaticConsent && await TryGrantAdminConsentAsync(
+            graphServicePrincipal.Id!, servicePrincipal.Id!, mailSendRole.Id.Value, ct);
 
         return new EntraAppProvisionResult
         {
@@ -81,20 +99,21 @@ public sealed class EntraAppManager
             ClientSecret = passwordCredential.SecretText!,
             ClientSecretExpiresOn = passwordCredential.EndDateTime!.Value,
             AdminConsentGranted = consentGranted,
-            PendingAdminConsentUrl = consentUrl
+            AdminConsentUrl = consentUrl
         };
     }
 
     /// <summary>
     /// Attempts to grant admin consent for the Mail.Send application permission by directly
-    /// creating the app role assignment. This requires the signed-in account to hold
-    /// Global Administrator, Privileged Role Administrator, or Application Administrator
-    /// (or the equivalent RBAC permission) in the tenant. If that fails with Forbidden,
-    /// falls back to returning the standard admin-consent URL for someone else to approve.
+    /// creating the app role assignment. This requires the signed-in account to hold a role
+    /// Graph accepts for this call (typically Global Administrator or Privileged Role
+    /// Administrator); it can fail with Forbidden even for a Global Administrator depending on
+    /// tenant policy (e.g. Conditional Access, Restricted Management Administrative Units) --
+    /// callers should always fall back to the browser consent URL (see
+    /// <see cref="BuildAdminConsentUrl"/>) rather than treat a false result as fatal.
     /// </summary>
-    private async Task<(bool Granted, string? ConsentUrl)> TryGrantAdminConsentAsync(
-        string graphServicePrincipalId, string ourServicePrincipalId, Guid mailSendRoleId,
-        string tenantId, string appId, CancellationToken ct)
+    private async Task<bool> TryGrantAdminConsentAsync(
+        string graphServicePrincipalId, string ourServicePrincipalId, Guid mailSendRoleId, CancellationToken ct)
     {
         try
         {
@@ -107,14 +126,13 @@ public sealed class EntraAppManager
             }, cancellationToken: ct);
 
             _logger.LogInformation("Admin consent granted automatically.");
-            return (true, null);
+            return true;
         }
         catch (ODataError ex) when (ex.ResponseStatusCode is 403 or 401)
         {
             _logger.LogWarning("The signed-in account cannot grant admin consent directly ({Status}). " +
-                                "Falling back to the admin-consent URL.", ex.ResponseStatusCode);
-            var url = BuildAdminConsentUrl(tenantId, appId);
-            return (false, url);
+                                "Use the browser consent link instead.", ex.ResponseStatusCode);
+            return false;
         }
     }
 

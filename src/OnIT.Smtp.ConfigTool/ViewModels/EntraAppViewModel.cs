@@ -15,6 +15,17 @@ public partial class EntraAppViewModel : ObservableObject
     [ObservableProperty] private string _displayName = "OnIT-SMTP Bridge";
     [ObservableProperty] private bool _useDeviceCodeSignIn;
     [ObservableProperty] private string _signInClientIdOverride = string.Empty;
+
+    /// <summary>
+    /// When checked (the default), app creation first tries to grant Mail.Send admin consent
+    /// directly via the Graph API -- a nice shortcut when it works, but it needs the
+    /// signed-in account to hold a role Graph accepts for app-role assignment, which can fail
+    /// unpredictably depending on tenant policy. When unchecked, that attempt is skipped
+    /// entirely and only the browser consent link is prepared: the simpler, more reliable
+    /// path where a Global/Application Administrator just opens it and clicks Accept.
+    /// </summary>
+    [ObservableProperty] private bool _attemptAutomaticConsent = true;
+
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isBusy;
 
@@ -28,8 +39,8 @@ public partial class EntraAppViewModel : ObservableObject
     public bool IsConfigured => Settings.IsConfigured;
     public string ApplicationId => Settings.ApplicationId;
     public bool AdminConsentGranted => Settings.AdminConsentGranted;
-    public string? PendingAdminConsentUrl => Settings.PendingAdminConsentUrl;
-    public bool HasPendingConsent => !string.IsNullOrWhiteSpace(PendingAdminConsentUrl) && !AdminConsentGranted;
+    public string? AdminConsentUrl => Settings.AdminConsentUrl;
+    public bool CanOpenConsentUrl => !string.IsNullOrWhiteSpace(AdminConsentUrl);
 
     public EntraAppViewModel()
     {
@@ -55,7 +66,7 @@ public partial class EntraAppViewModel : ObservableObject
 
             StatusMessage = "Creating the app registration...";
             var manager = new EntraAppManager(client, NullLogger<EntraAppManager>.Instance);
-            var result = await manager.CreateAppAsync(TenantId, DisplayName);
+            var result = await manager.CreateAppAsync(TenantId, DisplayName, AttemptAutomaticConsent);
 
             var config = ConfigurationContext.Instance.Current;
             config.EntraApp.TenantId = result.TenantId;
@@ -67,12 +78,12 @@ public partial class EntraAppViewModel : ObservableObject
             config.EntraApp.ProtectedClientSecret = ConfigurationContext.Instance.ProtectSecret(result.ClientSecret);
             config.EntraApp.ClientSecretExpiresOn = result.ClientSecretExpiresOn;
             config.EntraApp.AdminConsentGranted = result.AdminConsentGranted;
-            config.EntraApp.PendingAdminConsentUrl = result.PendingAdminConsentUrl;
+            config.EntraApp.AdminConsentUrl = result.AdminConsentUrl;
             ConfigurationContext.Instance.Save();
 
             StatusMessage = result.AdminConsentGranted
                 ? "App registration created and admin consent granted."
-                : "App registration created. Admin consent is still required -- see the link below.";
+                : "App registration created. Click \"Grant consent in browser\" below and accept as a Global/Application Administrator to finish.";
 
             RaiseAllChanged();
         }
@@ -137,10 +148,9 @@ public partial class EntraAppViewModel : ObservableObject
 
             var granted = await manager.HasAdminConsentAsync(Settings.ServicePrincipalObjectId);
             Settings.AdminConsentGranted = granted;
-            if (granted) Settings.PendingAdminConsentUrl = null;
             ConfigurationContext.Instance.Save();
 
-            StatusMessage = granted ? "Admin consent confirmed." : "Admin consent is still pending.";
+            StatusMessage = granted ? "Admin consent confirmed." : "Admin consent is not confirmed yet.";
             RaiseAllChanged();
         }
         catch (Exception ex)
@@ -156,8 +166,8 @@ public partial class EntraAppViewModel : ObservableObject
     [RelayCommand]
     private void OpenConsentUrl()
     {
-        if (string.IsNullOrWhiteSpace(PendingAdminConsentUrl)) return;
-        Process.Start(new ProcessStartInfo(PendingAdminConsentUrl) { UseShellExecute = true });
+        if (string.IsNullOrWhiteSpace(AdminConsentUrl)) return;
+        Process.Start(new ProcessStartInfo(AdminConsentUrl) { UseShellExecute = true });
     }
 
     private void RaiseAllChanged()
@@ -166,7 +176,7 @@ public partial class EntraAppViewModel : ObservableObject
         OnPropertyChanged(nameof(IsConfigured));
         OnPropertyChanged(nameof(ApplicationId));
         OnPropertyChanged(nameof(AdminConsentGranted));
-        OnPropertyChanged(nameof(PendingAdminConsentUrl));
-        OnPropertyChanged(nameof(HasPendingConsent));
+        OnPropertyChanged(nameof(AdminConsentUrl));
+        OnPropertyChanged(nameof(CanOpenConsentUrl));
     }
 }
