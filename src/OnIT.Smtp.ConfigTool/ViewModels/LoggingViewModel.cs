@@ -52,10 +52,10 @@ public partial class LoggingViewModel : ObservableObject
     [RelayCommand]
     private void BrowseLogDirectory()
     {
-        using var dialog = new System.Windows.Forms.FolderBrowserDialog { SelectedPath = LogDirectory };
-        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        var dialog = new Microsoft.Win32.OpenFolderDialog { InitialDirectory = LogDirectory };
+        if (dialog.ShowDialog() == true)
         {
-            LogDirectory = dialog.SelectedPath;
+            LogDirectory = dialog.FolderName;
         }
     }
 
