@@ -14,8 +14,14 @@ public partial class EntraAppViewModel : ObservableObject
     [ObservableProperty] private string _tenantId = string.Empty;
     [ObservableProperty] private string _displayName = "OnIT-SMTP Bridge";
     [ObservableProperty] private bool _useDeviceCodeSignIn;
+    [ObservableProperty] private string _signInClientIdOverride = string.Empty;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isBusy;
+
+    partial void OnSignInClientIdOverrideChanged(string value)
+    {
+        EntraSessionService.Instance.ClientIdOverride = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
 
     public EntraAppSettings Settings => ConfigurationContext.Instance.Current.EntraApp;
 

@@ -5,7 +5,7 @@
         <StackPanel MaxWidth="720" HorizontalAlignment="Left">
             <TextBlock Text="Entra App Registration" Style="{StaticResource SectionHeader}"/>
             <TextBlock Style="{StaticResource Hint}"
-                       Text="Creates the Entra ID app registration OnIT-SMTP uses to call Microsoft Graph, activates the Mail.Send application permission, and attempts to grant admin consent automatically."/>
+                       Text="Creates the Entra ID app registration OnIT-SMTP uses to call Microsoft Graph, activates the Mail.Send application permission, and attempts to grant admin consent automatically. Everything happens directly in the tenant you sign in to below -- nothing is registered outside it, and nothing is shared across customers."/>
 
             <GroupBox Header="Current status">
                 <StackPanel>
@@ -27,6 +27,16 @@
                     <TextBlock Text="Display name"/>
                     <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
                     <CheckBox Content="Sign in with a device code instead of a browser popup" IsChecked="{Binding UseDeviceCodeSignIn}"/>
+
+                    <Expander Header="Advanced: use my own sign-in app instead of Microsoft's" Margin="0,0,0,8">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="By default, the one-time sign-in used to create the app above goes through Microsoft's own 'Microsoft Graph PowerShell' application -- it's already present in every tenant, so there's nothing to pre-register. If you'd rather your own branding show on that consent screen, register a single-tenant app yourself in this tenant (Entra portal &gt; App registrations &gt; New, 'Accounts in this organizational directory only') with the delegated permissions Application.ReadWrite.All, AppRoleAssignment.ReadWrite.All, Directory.Read.All, User.Read.All, and a 'Mobile and desktop applications' redirect URI of http://localhost, then paste its client ID below."/>
+                            <TextBlock Text="Sign-in app client ID (optional)"/>
+                            <TextBox Text="{Binding SignInClientIdOverride, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Expander>
+
                     <StackPanel Orientation="Horizontal">
                         <Button Content="Create app" Command="{Binding CreateAppCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
                         <Button Content="Delete app" Command="{Binding DeleteAppCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>

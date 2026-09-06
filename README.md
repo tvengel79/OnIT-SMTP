@@ -62,24 +62,31 @@ The config tool's **Service Status** tab can also install/uninstall/start/stop t
 directly (it must run elevated -- see `app.manifest` -- since it shares
 `%ProgramData%\OnIT-SMTP` with the service and controls the SCM).
 
-## One-time setup before this works: register the config tool's own Entra app
+## Entra setup: no pre-registration needed
 
-Creating *your* app registration is a delegated (signed-in-admin) Graph operation, which
-means the config tool itself needs an Entra app registration to sign the operator in with.
-That's a single, one-time registration done by whoever owns this deployment (not per
-customer/tenant):
+Nothing needs to be registered in advance, by anyone, before this works -- there is no
+OnIT-owned app, multi-tenant or otherwise, involved anywhere in the process. Everything
+happens inside the target customer's own tenant:
 
-1. In the Azure/Entra portal, register a new app (e.g. "OnIT-SMTP Config Tool"),
-   multi-tenant ("Accounts in any organizational directory").
-2. Add a **Mobile and desktop applications** platform with redirect URI `http://localhost`.
-3. Add these **delegated** Microsoft Graph permissions: `Application.ReadWrite.All`,
-   `AppRoleAssignment.ReadWrite.All`, `Directory.Read.All`, `User.Read.All`.
-4. Put its Application (client) ID into
-   `src/OnIT.Smtp.Core/Entra/GraphWellKnown.cs` -> `ConfigToolClientId`.
+1. On the **Entra App** tab, enter the customer's tenant ID or domain and click **Create
+   app**. The operator signs in interactively (browser popup or device code).
+2. That one-time sign-in uses Microsoft's own first-party **Microsoft Graph PowerShell**
+   application (present in every tenant already, the same way `Connect-MgGraph` works out
+   of the box) purely to authenticate -- it requests delegated `Application.ReadWrite.All`,
+   `AppRoleAssignment.ReadWrite.All`, `Directory.Read.All`, and `User.Read.All`. Because
+   those are high-privilege scopes, the signed-in account needs to be a Global/Application
+   Administrator in that tenant to consent (a one-time click, first sign-in only).
+3. Once signed in, the config tool creates the actual relay app registration, activates the
+   `Mail.Send` application permission on it, and grants its admin consent -- all within that
+   same tenant, and repeated independently for every customer.
 
-Until that's filled in, use the "sign in with a device code" option together with an
-explicit `ClientIdOverride` (see `EntraBootstrapOptions`) if you need to test against your
-own tenant with your own app registration in the meantime.
+If an operator would rather their own branding show on that one-time consent screen instead
+of Microsoft's, they can register a single-tenant app themselves in the customer's tenant
+(Entra portal > App registrations > New > "Accounts in this organizational directory only",
+a **Mobile and desktop applications** platform with redirect URI `http://localhost`, and the
+same four delegated permissions above) and paste its client ID into the "Sign-in app" field
+under **Advanced** on the Entra App tab. Either way, sign-in and everything it does afterward
+stays entirely inside that one tenant.
 
 ## How relaying works
 

@@ -9,21 +9,30 @@ public static class GraphWellKnown
     public const string MailSendAppRoleValue = "Mail.Send";
 
     /// <summary>
-    /// Client (application) ID of the OnIT-SMTP Config Tool's own multi-tenant Entra app
-    /// registration, used purely for delegated, interactive sign-in so an administrator can
-    /// manage app registrations, permissions and admin consent, and browse mailbox users.
+    /// Client (application) ID used purely to bootstrap the delegated, interactive sign-in
+    /// so an administrator can manage app registrations, permissions, and admin consent, and
+    /// browse mailbox users -- all of it executed directly against the target tenant.
     ///
-    /// This is registered once by OnIT (the vendor) in a Microsoft Partner/publisher tenant --
-    /// it is NOT created per customer. Fill this in before shipping a build; until then the
-    /// config tool will show a setup error asking the operator to supply one (see
-    /// EntraBootstrapOptions.ClientId override).
+    /// This is Microsoft's own first-party "Microsoft Graph PowerShell" application. It is
+    /// NOT owned by, or registered by, OnIT -- it already exists in every Entra tenant (the
+    /// same way `Connect-MgGraph` works out of the box), so there is nothing to pre-register
+    /// and nothing that lives outside the customer's own tenant. The operator still has to
+    /// consent to it the first time they sign in (it requests high-privilege delegated
+    /// permissions, so that consent has to come from a Global/Application Administrator) --
+    /// that consent, like everything else, is granted inside the customer's tenant only.
     ///
-    /// Required delegated permissions on that registration:
+    /// An operator who would rather see their own branding on that one-time consent screen
+    /// can instead register a single-tenant app themselves (a couple of clicks in the Entra
+    /// portal, "Accounts in this organizational directory only") with the same delegated
+    /// permissions below, and paste its client ID into the config tool's "Sign-in app"
+    /// field -- see EntraBootstrapOptions.ClientIdOverride. Either way, everything this app
+    /// does after sign-in happens in that same tenant.
+    ///
+    /// Required delegated permissions:
     ///   Application.ReadWrite.All, AppRoleAssignment.ReadWrite.All,
     ///   Directory.Read.All, User.Read.All
-    /// Public client / mobile & desktop platform, redirect URI: http://localhost
     /// </summary>
-    public const string ConfigToolClientId = "00000000-0000-0000-0000-000000000000";
+    public const string DefaultSignInClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
 
     public static readonly string[] DelegatedScopes =
     {

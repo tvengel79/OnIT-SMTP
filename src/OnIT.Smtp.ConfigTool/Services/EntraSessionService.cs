@@ -15,6 +15,7 @@ public sealed class EntraSessionService
     private readonly DelegatedGraphClientFactory _factory = new();
     private GraphServiceClient? _client;
     private string? _signedInTenantId;
+    private string? _signedInClientId;
 
     private EntraSessionService()
     {
@@ -22,17 +23,29 @@ public sealed class EntraSessionService
 
     public bool IsSignedIn => _client is not null;
 
+    /// <summary>
+    /// Set from the Entra App tab's optional "Sign-in app" field if the operator wants to use
+    /// their own single-tenant app registration instead of the zero-registration default
+    /// (Microsoft's first-party "Microsoft Graph PowerShell" client). Null uses the default.
+    /// </summary>
+    public string? ClientIdOverride { get; set; }
+
     public GraphServiceClient EnsureClient(string tenantId, bool useDeviceCode, Action<string>? deviceCodePrompt = null)
     {
-        if (_client is not null && string.Equals(_signedInTenantId, tenantId, StringComparison.OrdinalIgnoreCase))
+        var effectiveClientId = string.IsNullOrWhiteSpace(ClientIdOverride) ? GraphWellKnown.DefaultSignInClientId : ClientIdOverride;
+
+        if (_client is not null
+            && string.Equals(_signedInTenantId, tenantId, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(_signedInClientId, effectiveClientId, StringComparison.OrdinalIgnoreCase))
         {
             return _client;
         }
 
-        var options = new EntraBootstrapOptions { TenantId = tenantId, UseDeviceCode = useDeviceCode };
+        var options = new EntraBootstrapOptions { TenantId = tenantId, UseDeviceCode = useDeviceCode, ClientIdOverride = ClientIdOverride };
         var (client, _) = _factory.Create(options, deviceCodePrompt);
         _client = client;
         _signedInTenantId = tenantId;
+        _signedInClientId = effectiveClientId;
         return client;
     }
 
@@ -40,5 +53,6 @@ public sealed class EntraSessionService
     {
         _client = null;
         _signedInTenantId = null;
+        _signedInClientId = null;
     }
 }
