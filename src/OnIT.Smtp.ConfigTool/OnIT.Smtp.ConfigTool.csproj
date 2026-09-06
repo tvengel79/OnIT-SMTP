@@ -10,7 +10,7 @@
          usings for both System.Windows and System.Windows.Forms, which makes types present
          in both (Application, UserControl, ...) ambiguous everywhere in this project. The
          one thing WinForms was here for (a folder picker) is covered natively by
-         Microsoft.Win32.OpenFolderDialog since .NET 8 -- see LoggingViewModel. -->
+         Microsoft.Win32.OpenFolderDialog since .NET 8; see LoggingViewModel. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
