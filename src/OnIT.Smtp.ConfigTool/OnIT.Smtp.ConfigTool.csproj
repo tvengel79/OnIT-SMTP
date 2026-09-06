@@ -11,10 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Microsoft.Extensions.Hosting/Logging.Abstractions are deliberately not referenced
+         here: nothing in this project uses the Generic Host, and NullLogger<T> (used in
+         EntraAppViewModel) comes transitively through the ProjectReference to Core, which
+         already depends on Logging.Abstractions. Adding them directly here previously
+         caused an NU1605 package-downgrade error against Core's version. -->
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
