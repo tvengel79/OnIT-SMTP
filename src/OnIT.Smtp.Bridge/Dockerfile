@@ -10,13 +10,13 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY Directory.Build.props .
-COPY src/OnIT.Smtp.Core/OnIT.Smtp.Core.csproj src/OnIT.Smtp.Core/
-COPY src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj src/OnIT.Smtp.Bridge/
-RUN dotnet restore src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj
-
 COPY src/OnIT.Smtp.Core/ src/OnIT.Smtp.Core/
 COPY src/OnIT.Smtp.Bridge/ src/OnIT.Smtp.Bridge/
-RUN dotnet publish src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj -c Release -o /app --no-restore
+
+# A single restore+publish (rather than a separate --no-restore publish layer) sidesteps a
+# restore/publish inconsistency seen in CI where a transitive package NuGet had just restored
+# was reported missing again at publish time.
+RUN dotnet publish src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 WORKDIR /app
