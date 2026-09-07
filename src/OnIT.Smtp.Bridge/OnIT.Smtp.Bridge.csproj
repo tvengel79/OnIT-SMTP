@@ -9,7 +9,7 @@
     <!-- Part 2: the cross-platform relay host, meant to run in a Docker container (e.g. on a
          NAS). Same net8.0 TFM as OnIT.Smtp.Core (no *-windows) so it runs on Linux; unlike
          OnIT.Smtp.Service it has no Windows Service hosting and no named-pipe control channel
-         for a local WPF config tool -- it is seeded once from a config directory exported by
+         for a local WPF config tool: it is seeded once from a config directory exported by
          the Windows config tool (see ConfigPaths' ONITSMTP_HOME override) and otherwise runs
          headless, logging to the console (for `docker logs`) and to file. -->
   </PropertyGroup>
