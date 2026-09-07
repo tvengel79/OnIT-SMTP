@@ -116,12 +116,27 @@ stays entirely inside that one tenant.
    multipart messages such as scan-to-email PDFs) and sent via
    `POST /users/{from}/sendMail` using the app-only (client credentials) Entra app.
 
+The listener being open and reachable from other machines on the LAN also depends on Windows
+Firewall. The **SMTP Listener** tab checks for a dedicated inbound-allow rule on the
+configured port and offers an **Add firewall rule** button when one's missing, mismatched, or
+disabled -- it only ever manages that one rule (named "OnIT-SMTP SMTP Listener"), never
+touches anything else in the firewall.
+
 ## Logging
 
 - Rolling daily file log under `%ProgramData%\OnIT-SMTP\logs` (configurable), with an
   **Informational** / **Detailed** verbosity switch.
 - A live view streams over a local named pipe to the config tool's *Logging* tab whenever
   it's open, seeded with recent history so you don't start from a blank screen.
+
+## Client secret expiry
+
+The Entra App tab shows the client secret's expiry date and a color-coded days-remaining
+indicator. The service checks it hourly and emails the configured recipients as it gets
+close -- at 30, 15, 7, and 3 days out, and again if it actually expires -- so it doesn't
+silently break mail relaying. Renewal is manual by design (see the "Auto-renew" discussion
+earlier in this project): click **Renew secret now** on the Entra App tab, which issues a
+fresh secret and removes the old one via the same delegated sign-in used to create the app.
 
 ## Secret protection
 

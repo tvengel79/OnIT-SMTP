@@ -13,6 +13,7 @@
             <conv:EnumToVisibilityConverter x:Key="EnumToVis"/>
             <conv:DaysUntilExpiryToBrushConverter x:Key="ExpiryToBrush"/>
             <conv:NullToVisibilityConverter x:Key="NullToVis"/>
+            <conv:BoolToWarningBrushConverter x:Key="BoolToWarningBrush"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

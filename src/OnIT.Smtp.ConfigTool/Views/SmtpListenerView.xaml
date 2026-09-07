@@ -24,6 +24,18 @@
 
             <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left"/>
             <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}"/>
+
+            <GroupBox Header="Windows Firewall" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding FirewallStatusMessage}" TextWrapping="Wrap"
+                               Foreground="{Binding FirewallNeedsAttention, Converter={StaticResource BoolToWarningBrush}}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Check again" Command="{Binding CheckFirewallCommand}"/>
+                        <Button Content="Add firewall rule" Command="{Binding AddFirewallRuleCommand}"
+                                Visibility="{Binding FirewallNeedsAttention, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
