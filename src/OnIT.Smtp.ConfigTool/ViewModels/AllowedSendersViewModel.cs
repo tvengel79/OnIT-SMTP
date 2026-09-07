@@ -48,7 +48,7 @@ public partial class AllowedSendersViewModel : ObservableObject
         StatusMessage = "Signing in and searching...";
         try
         {
-            var client = EntraSessionService.Instance.EnsureClient(tenantId, useDeviceCode: false, message => StatusMessage = message);
+            var client = await EntraSessionService.Instance.EnsureClientAsync(tenantId, useDeviceCode: false, message => StatusMessage = message);
             var directory = new EntraUserDirectory(client);
             var results = await directory.ListMailboxUsersAsync(string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm);
 

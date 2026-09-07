@@ -78,7 +78,7 @@ public partial class EntraAppViewModel : ObservableObject
 
         try
         {
-            var client = EntraSessionService.Instance.EnsureClient(TenantId, UseDeviceCodeSignIn,
+            var client = await EntraSessionService.Instance.EnsureClientAsync(TenantId, UseDeviceCodeSignIn,
                 message => Application.Current.Dispatcher.Invoke(() => StatusMessage = message));
 
             StatusMessage = "Creating the app registration...";
@@ -131,7 +131,7 @@ public partial class EntraAppViewModel : ObservableObject
 
         try
         {
-            var client = EntraSessionService.Instance.EnsureClient(Settings.TenantId, UseDeviceCodeSignIn,
+            var client = await EntraSessionService.Instance.EnsureClientAsync(Settings.TenantId, UseDeviceCodeSignIn,
                 message => Application.Current.Dispatcher.Invoke(() => StatusMessage = message));
 
             var manager = new EntraAppManager(client, NullLogger<EntraAppManager>.Instance);
@@ -161,7 +161,7 @@ public partial class EntraAppViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var client = EntraSessionService.Instance.EnsureClient(Settings.TenantId, UseDeviceCodeSignIn);
+            var client = await EntraSessionService.Instance.EnsureClientAsync(Settings.TenantId, UseDeviceCodeSignIn);
             var manager = new EntraAppManager(client, NullLogger<EntraAppManager>.Instance);
 
             var granted = await manager.HasAdminConsentAsync(Settings.ServicePrincipalObjectId);
@@ -205,7 +205,7 @@ public partial class EntraAppViewModel : ObservableObject
 
         try
         {
-            var client = EntraSessionService.Instance.EnsureClient(Settings.TenantId, UseDeviceCodeSignIn,
+            var client = await EntraSessionService.Instance.EnsureClientAsync(Settings.TenantId, UseDeviceCodeSignIn,
                 message => Application.Current.Dispatcher.Invoke(() => StatusMessage = message));
 
             StatusMessage = "Renewing client secret...";
