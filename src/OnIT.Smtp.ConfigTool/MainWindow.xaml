@@ -40,6 +40,9 @@
             <TabItem Header="Docker Export">
                 <views:DockerExportView DataContext="{Binding DockerExport}"/>
             </TabItem>
+            <TabItem Header="About">
+                <views:AboutView DataContext="{Binding About}"/>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
