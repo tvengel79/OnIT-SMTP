@@ -12,7 +12,17 @@
          one thing WinForms was here for (a folder picker) is covered natively by
          Microsoft.Win32.OpenFolderDialog since .NET 8; see LoggingViewModel. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\favicon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ApplicationIcon above sets the compiled .exe's own icon (Explorer, taskbar pin);
+         Resource here additionally makes both files loadable via a pack:// URI at runtime
+         (Assets/favicon.ico for the window's titlebar/taskbar icon, the logo for the
+         top-right branding in MainWindow). -->
+    <Resource Include="Assets\favicon.ico" />
+    <Resource Include="Assets\we_are_on_it_logo.jpg" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Microsoft.Extensions.Hosting/Logging.Abstractions are deliberately not referenced

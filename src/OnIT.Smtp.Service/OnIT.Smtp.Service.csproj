@@ -7,6 +7,8 @@
     <OutputType>Exe</OutputType>
     <UserSecretsId>onit-smtp-service</UserSecretsId>
     <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- Same icon as the config tool, referenced directly rather than duplicated. -->
+    <ApplicationIcon>..\OnIT.Smtp.ConfigTool\Assets\favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
