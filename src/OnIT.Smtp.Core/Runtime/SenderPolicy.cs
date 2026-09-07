@@ -1,6 +1,6 @@
 using OnIT.Smtp.Core.Configuration;
 
-namespace OnIT.Smtp.Service;
+namespace OnIT.Smtp.Core.Runtime;
 
 /// <summary>Enforces AdvancedSettings.RestrictToAllowedSenders against the configured AllowedSenders list.</summary>
 public static class SenderPolicy

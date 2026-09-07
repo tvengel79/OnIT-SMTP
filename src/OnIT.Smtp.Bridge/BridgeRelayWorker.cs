@@ -1,26 +1,25 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OnIT.Smtp.Core.Configuration;
-using OnIT.Smtp.Core.Ipc;
 using OnIT.Smtp.Core.Mail;
 using OnIT.Smtp.Core.Networking;
 using OnIT.Smtp.Core.Runtime;
 using OnIT.Smtp.Core.Smtp;
-using OnIT.Smtp.Service.Ipc;
 
-namespace OnIT.Smtp.Service;
+namespace OnIT.Smtp.Bridge;
 
 /// <summary>
-/// Owns the whole runtime: loads configuration, starts the SMTP listener and the control
-/// pipe, applies the allowed-senders policy to each relayed message, and supports a live
-/// config reload (triggered by the config tool, or picked up automatically on save).
+/// Owns the whole Part 2 runtime: loads configuration, starts the SMTP listener, and applies
+/// the allowed-senders policy to each relayed message -- the same job as OnIT.Smtp.Service's
+/// RelayWorker, minus the Windows-only named-pipe control channel (there is no local WPF
+/// config tool to connect to a container). Config is edited by replacing config.json in the
+/// mounted volume; this worker picks it up automatically via the same file-watcher approach.
 /// </summary>
-public sealed class RelayWorker : BackgroundService
+public sealed class BridgeRelayWorker : BackgroundService
 {
     private readonly ConfigStore _configStore;
     private readonly GraphMailService _mailService;
-    private readonly ControlPipeHost _controlPipeHost;
-    private readonly ILogger<RelayWorker> _logger;
+    private readonly ILogger<BridgeRelayWorker> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
     private readonly object _configLock = new();
@@ -28,23 +27,16 @@ public sealed class RelayWorker : BackgroundService
     private SmtpServer? _smtpServer;
     private FileSystemWatcher? _configWatcher;
 
-    public RelayWorker(
+    public BridgeRelayWorker(
         ConfigStore configStore,
         GraphMailService mailService,
-        Core.Logging.LiveLogSink liveLogSink,
-        ILogger<RelayWorker> logger,
+        ILogger<BridgeRelayWorker> logger,
         ILoggerFactory loggerFactory)
     {
         _configStore = configStore;
         _mailService = mailService;
         _loggerFactory = loggerFactory;
         _logger = logger;
-        _controlPipeHost = new ControlPipeHost(
-            liveLogSink,
-            GetStatus,
-            (ct) => ReloadConfigAsync(ct),
-            SendTestEmailAsync,
-            loggerFactory.CreateLogger<ControlPipeHost>());
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -52,11 +44,17 @@ public sealed class RelayWorker : BackgroundService
         ConfigPaths.EnsureDirectoriesExist();
         _config = _configStore.Load();
 
-        _controlPipeHost.Start(stoppingToken);
+        if (!_config.EntraApp.IsConfigured)
+        {
+            _logger.LogWarning(
+                "No Entra app is configured yet -- seed {ConfigPath} (exported from the Windows config tool) before relaying mail.",
+                ConfigPaths.ConfigFilePath);
+        }
+
         await StartSmtpServerAsync(stoppingToken);
         StartConfigFileWatcher();
 
-        _logger.LogInformation("OnIT-SMTP service started.");
+        _logger.LogInformation("OnIT-SMTP bridge started.");
 
         try
         {
@@ -72,7 +70,6 @@ public sealed class RelayWorker : BackgroundService
     {
         _configWatcher?.Dispose();
         if (_smtpServer is not null) await _smtpServer.DisposeAsync();
-        await _controlPipeHost.DisposeAsync();
         await base.StopAsync(cancellationToken);
     }
 
@@ -110,7 +107,7 @@ public sealed class RelayWorker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to relay message from {From} via Microsoft Graph.", transaction.MailFrom);
-            return SmtpDeliveryResult.Reject("Delivery via Microsoft Graph failed. Check the service log for details.");
+            return SmtpDeliveryResult.Reject("Delivery via Microsoft Graph failed. Check the bridge log for details.");
         }
     }
 
@@ -125,13 +122,14 @@ public sealed class RelayWorker : BackgroundService
 
         _configWatcher.Changed += async (_, _) =>
         {
-            // Debounce: the config tool can write the file more than once in quick succession.
+            // Debounce: a bind-mounted config file can be written more than once in quick
+            // succession (e.g. a text editor's save, or the volume sync catching up).
             await Task.Delay(300);
             await ReloadConfigAsync(CancellationToken.None);
         };
     }
 
-    public async Task<OperationResult> ReloadConfigAsync(CancellationToken ct)
+    private async Task ReloadConfigAsync(CancellationToken ct)
     {
         try
         {
@@ -151,58 +149,10 @@ public sealed class RelayWorker : BackgroundService
             }
 
             _logger.LogInformation("Configuration reloaded.");
-            return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to reload configuration.");
-            return OperationResult.Fail(ex.Message);
         }
-    }
-
-    private async Task<OperationResult> SendTestEmailAsync(SendTestEmailRequestPayload payload, CancellationToken ct)
-    {
-        AppConfiguration snapshot;
-        lock (_configLock) snapshot = _config;
-
-        try
-        {
-            var message = new OutboundMessage
-            {
-                From = payload.From,
-                To = new[] { payload.To },
-                Subject = payload.Subject,
-                Body = payload.Body,
-                IsHtml = false
-            };
-
-            await _mailService.SendAsync(snapshot.EntraApp, message, ct);
-            return OperationResult.Ok();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Test email send failed.");
-            return OperationResult.Fail(ex.Message);
-        }
-    }
-
-    private ServiceStatus GetStatus()
-    {
-        AppConfiguration snapshot;
-        lock (_configLock) snapshot = _config;
-
-        var stats = _smtpServer?.Stats;
-        return new ServiceStatus
-        {
-            Listening = _smtpServer?.IsListening ?? false,
-            BindAddress = snapshot.SmtpListener.BindAddress,
-            Port = snapshot.SmtpListener.Port,
-            StartedAt = stats?.StartedAt ?? DateTimeOffset.UtcNow,
-            MessagesRelayed = stats?.MessagesRelayed ?? 0,
-            MessagesRejected = stats?.MessagesRejected ?? 0,
-            ConnectionsRejectedByIpAllowList = stats?.ConnectionsRejectedByIpAllowList ?? 0,
-            EntraAppConfigured = snapshot.EntraApp.IsConfigured,
-            AdminConsentGranted = snapshot.EntraApp.AdminConsentGranted
-        };
     }
 }

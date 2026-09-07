@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OnIT.Smtp.Bridge;
 using OnIT.Smtp.Core.Configuration;
 using OnIT.Smtp.Core.Logging;
 using OnIT.Smtp.Core.Mail;
 using OnIT.Smtp.Core.Runtime;
-using OnIT.Smtp.Service;
 using Serilog;
 
 ConfigPaths.EnsureDirectoriesExist();
@@ -13,15 +13,14 @@ var configStore = new ConfigStore();
 var initialConfig = configStore.Load();
 
 var liveLogSink = new LiveLogSink();
-var serilogLogger = LoggingSetup.CreateLogger(initialConfig.Logging, liveLogSink);
+var serilogLogger = LoggingSetup.CreateLogger(initialConfig.Logging, liveLogSink, includeConsole: true);
 Log.Logger = serilogLogger;
 
 try
 {
-    Log.Information("Starting OnIT-SMTP service.");
+    Log.Information("Starting OnIT-SMTP bridge.");
 
     var host = Host.CreateDefaultBuilder(args)
-        .UseWindowsService(options => options.ServiceName = "OnIT-SMTP")
         .UseSerilog()
         .ConfigureServices(services =>
         {
@@ -30,7 +29,7 @@ try
             services.AddSingleton<ISecretProtector, PortableSecretProtector>();
             services.AddSingleton<GraphCredentialFactory>();
             services.AddSingleton<GraphMailService>();
-            services.AddHostedService<RelayWorker>();
+            services.AddHostedService<BridgeRelayWorker>();
             services.AddHostedService<SecretExpiryWorker>();
         })
         .Build();
@@ -39,7 +38,7 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "OnIT-SMTP service terminated unexpectedly.");
+    Log.Fatal(ex, "OnIT-SMTP bridge terminated unexpectedly.");
 }
 finally
 {

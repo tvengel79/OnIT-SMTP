@@ -1,0 +1,13 @@
+bin/
+obj/
+out/
+publish/
+.vs/
+.idea/
+TestResults/
+tests/
+deploy/
+docs/
+*.md
+.git/
+.gitignore

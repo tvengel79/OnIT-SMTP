@@ -12,8 +12,10 @@ public static class LoggingSetup
     /// <summary>
     /// Builds the Serilog logger used by the Windows Service: rolling daily file, plus an
     /// in-process live sink the named-pipe IPC host reads from when the config tool is open.
+    /// The Part 2 Docker/Linux bridge has no such IPC channel to view logs remotely, so it
+    /// passes <paramref name="includeConsole"/> to also write to stdout for `docker logs`.
     /// </summary>
-    public static Serilog.Core.Logger CreateLogger(LoggingSettings settings, LiveLogSink liveSink)
+    public static Serilog.Core.Logger CreateLogger(LoggingSettings settings, LiveLogSink liveSink, bool includeConsole = false)
     {
         var logDirectory = string.IsNullOrWhiteSpace(settings.LogDirectory) ? ConfigPaths.DefaultLogDirectory : settings.LogDirectory;
         Directory.CreateDirectory(logDirectory);
@@ -33,6 +35,11 @@ public static class LoggingSetup
         if (settings.EnableLiveViewer)
         {
             config = config.WriteTo.Sink(liveSink);
+        }
+
+        if (includeConsole)
+        {
+            config = config.WriteTo.Console(outputTemplate: OutputTemplate);
         }
 
         return config.CreateLogger();

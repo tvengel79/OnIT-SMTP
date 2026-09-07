@@ -4,13 +4,14 @@ using OnIT.Smtp.Core.Configuration;
 using OnIT.Smtp.Core.Entra;
 using OnIT.Smtp.Core.Mail;
 
-namespace OnIT.Smtp.Service;
+namespace OnIT.Smtp.Core.Runtime;
 
 /// <summary>
 /// Periodically checks the configured Entra app's client secret expiry and emails the
 /// configured recipients as each threshold (30/15/7/3/0 days) is crossed. Renewal itself
 /// stays manual -- see the config tool's "Renew secret now" button -- this worker only
-/// notifies. Runs independently of RelayWorker so a problem in one never blocks the other.
+/// notifies. Runs independently of the SMTP relay worker so a problem in one never blocks
+/// the other. Shared by the Windows Service and the Part 2 Docker/Linux bridge as-is.
 /// </summary>
 public sealed class SecretExpiryWorker : BackgroundService
 {

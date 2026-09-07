@@ -27,3 +27,31 @@ jobs:
 
       - name: Test
         run: dotnet test tests/OnIT.Smtp.Core.Tests/OnIT.Smtp.Core.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
+
+  build-linux:
+    # Proves the Part 2 promise: OnIT.Smtp.Core and OnIT.Smtp.Bridge target plain net8.0 (no
+    # *-windows) and actually build/run on Linux, unlike the WPF/Windows Service projects.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore Bridge
+        run: dotnet restore src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj
+
+      - name: Build Bridge
+        run: dotnet build src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj --configuration Release --no-restore
+
+      - name: Restore Core tests
+        run: dotnet restore tests/OnIT.Smtp.Core.Tests/OnIT.Smtp.Core.Tests.csproj
+
+      - name: Test Core on Linux
+        run: dotnet test tests/OnIT.Smtp.Core.Tests/OnIT.Smtp.Core.Tests.csproj --configuration Release --logger "console;verbosity=normal"
+
+      - name: Docker build
+        run: docker build -f src/OnIT.Smtp.Bridge/Dockerfile -t onit-smtp-bridge .

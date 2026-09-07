@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>OnIT.Smtp.Bridge</RootNamespace>
+    <AssemblyName>OnIT.Smtp.Bridge</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- Part 2: the cross-platform relay host, meant to run in a Docker container (e.g. on a
+         NAS). Same net8.0 TFM as OnIT.Smtp.Core (no *-windows) so it runs on Linux; unlike
+         OnIT.Smtp.Service it has no Windows Service hosting and no named-pipe control channel
+         for a local WPF config tool -- it is seeded once from a config directory exported by
+         the Windows config tool (see ConfigPaths' ONITSMTP_HOME override) and otherwise runs
+         headless, logging to the console (for `docker logs`) and to file. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OnIT.Smtp.Core\OnIT.Smtp.Core.csproj" />
+  </ItemGroup>
+
+</Project>

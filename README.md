@@ -2,8 +2,8 @@
 
 SMTP bridge for sending local e-mails through Microsoft Graph.
 
-**Part 1** (this repo, in progress) is a Windows Service + WPF configuration tool that
-relays plain SMTP from LAN devices/apps to Microsoft Graph `sendMail`. **Part 2** (planned)
+**Part 1** (this repo) is a Windows Service + WPF configuration tool that relays plain SMTP
+from LAN devices/apps to Microsoft Graph `sendMail`. **Part 2** (this repo, `OnIT.Smtp.Bridge`)
 is a Docker container -- seeded from the same config export -- that does the same job on
 non-Windows hosts (e.g. a NAS).
 
@@ -23,6 +23,11 @@ src/
                           allowed senders (picked from Entra), the IP allow list, SMTP
                           listener settings, logging (with a live log viewer), test-send,
                           service install/start/stop, and Docker config export.
+  OnIT.Smtp.Bridge/       Part 2: the cross-platform relay host (plain net8.0, runs in
+                          Docker on Linux/NAS). Same SMTP listener + Graph relay logic as
+                          OnIT.Smtp.Service, minus the Windows-only named-pipe control
+                          channel. Seeded from a config directory copied or exported from
+                          Part 1. Includes its own Dockerfile.
 tests/
   OnIT.Smtp.Core.Tests/  xUnit tests for the IP allow list and MIME parsing/relay logic.
 deploy/                  PowerShell scripts to publish and install/uninstall the service.
@@ -31,8 +36,11 @@ deploy/                  PowerShell scripts to publish and install/uninstall the
 ## Building
 
 Requires the **.NET 8 SDK** and, since the Service and ConfigTool projects target
-`net8.0-windows` (Windows Service hosting APIs, WPF), a **Windows** machine or CI runner.
-`OnIT.Smtp.Core` itself targets plain `net8.0` and builds anywhere.
+`net8.0-windows` (Windows Service hosting APIs, WPF), a **Windows** machine or CI runner to
+build the whole solution. `OnIT.Smtp.Core` and `OnIT.Smtp.Bridge` target plain `net8.0` and
+build and run anywhere, including Linux -- CI's `build-linux` job builds and tests both there
+directly, and also builds the bridge's Docker image, so Part 2 is verified cross-platform on
+every push.
 
 ```powershell
 dotnet restore OnIT-SMTP.sln
@@ -149,10 +157,64 @@ there with no re-entry and no redoing Entra admin consent. The key file's NTFS A
 effort, restricted to Administrators/SYSTEM) are the actual protection boundary, not machine
 identity. Copying config.json *without* secret.key leaves the secret as unusable ciphertext.
 
-## Docker export (Part 2 prep)
+## Part 2: the Docker/Linux bridge
 
-The *Docker Export* tab writes the current Entra app, allowed senders, IP allow rules, and
-SMTP settings as JSON, optionally with the client secret decrypted to plain text -- handy
-when you'd rather hand the container a single self-contained file/env var than also copy
-`secret.key`. Since protection here isn't machine-bound, copying config.json + secret.key
-directly to the container works too, without this export step at all.
+`OnIT.Smtp.Bridge` is the same SMTP-listener-to-Graph-relay logic as the Windows Service,
+packaged to run headless in a container on a non-Windows host (e.g. a NAS). It has no local
+WPF config tool to talk to, so there's no named-pipe control channel -- instead it reads
+`config.json` from a mounted volume, watches it for changes, and logs to both a rolling file
+and stdout (`docker logs`). Configuration is entirely edited on the Part 1 side (the config
+tool, or by hand) and copied or mounted in; the bridge itself has no UI.
+
+### Seeding the config directory
+
+Because `PortableSecretProtector`'s key file isn't machine-bound (see below), the simplest
+path is to copy the Part 1 config directory as-is:
+
+1. On the machine running the config tool, copy `%ProgramData%\OnIT-SMTP\config.json` and
+   `%ProgramData%\OnIT-SMTP\secret.key` into a directory that will become the container's
+   mounted volume (e.g. `./onit-smtp-config` on the NAS).
+2. Alternatively, use the config tool's **Docker Export** tab to write a self-contained
+   `config.json`, optionally with the client secret already decrypted to plain text (so you
+   don't need to also transfer `secret.key`) -- useful when you'd rather hand the container a
+   single file or inject the secret via its own secrets mechanism.
+
+Either way, the bridge reads whichever `config.json` (and, if present, `secret.key`) it finds
+under the directory pointed at by `ONITSMTP_HOME`.
+
+### Running the container
+
+```bash
+# Build (from the repository root):
+docker build -f src/OnIT.Smtp.Bridge/Dockerfile -t onit-smtp-bridge .
+
+# Run, mounting the seeded config directory at /config (the image's default ONITSMTP_HOME):
+docker run -d --name onit-smtp-bridge \
+  -p 25:25 \
+  -v ./onit-smtp-config:/config \
+  onit-smtp-bridge
+```
+
+Or with Compose:
+
+```yaml
+services:
+  onit-smtp-bridge:
+    build:
+      context: .
+      dockerfile: src/OnIT.Smtp.Bridge/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "25:25"
+    volumes:
+      - ./onit-smtp-config:/config
+```
+
+Editing `config.json` in the mounted volume while the container runs (e.g. to update the IP
+allow list) is picked up automatically -- the bridge watches the file the same way the
+Windows Service does, restarting only the SMTP listener if the bind address/port changed.
+
+The client secret expiry notification worker runs in the bridge too, so a Part 2-only
+deployment still gets the 30/15/7/3/0-day warning emails; renewal itself still happens from
+the Part 1 config tool (it's the one with the delegated Entra sign-in), after which the
+refreshed `config.json` just needs to reach the mounted volume again.
