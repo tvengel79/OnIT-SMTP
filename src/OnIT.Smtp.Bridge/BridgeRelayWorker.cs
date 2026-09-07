@@ -138,6 +138,11 @@ public sealed class BridgeRelayWorker : BackgroundService
 
             lock (_configLock) _config = newConfig;
 
+            // Applied even when the listener itself doesn't restart below, so IP allow-list
+            // edits take effect on the next connection instead of silently waiting for a
+            // bind-address/port change (or a manual restart) to pick them up.
+            _smtpServer?.UpdateIpAllowList(new IpAllowList(newConfig.IpAllowRules));
+
             var listenerChanged = previousListener.BindAddress != newConfig.SmtpListener.BindAddress
                 || previousListener.Port != newConfig.SmtpListener.Port;
 

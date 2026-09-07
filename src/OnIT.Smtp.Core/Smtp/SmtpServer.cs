@@ -21,7 +21,7 @@ public sealed class SmtpServerStats
 public sealed class SmtpServer : IAsyncDisposable
 {
     private readonly SmtpListenerSettings _settings;
-    private readonly IpAllowList _ipAllowList;
+    private volatile IpAllowList _ipAllowList;
     private readonly Func<SmtpTransaction, CancellationToken, Task<SmtpDeliveryResult>> _onMessage;
     private readonly ILogger<SmtpServer> _logger;
 
@@ -32,6 +32,13 @@ public sealed class SmtpServer : IAsyncDisposable
     public SmtpServerStats Stats { get; private set; } = new() { StartedAt = DateTimeOffset.UtcNow };
 
     public bool IsListening => _listener is not null;
+
+    /// <summary>
+    /// Swaps in a freshly built allow list -- e.g. after a config reload -- without needing to
+    /// restart the listener. Takes effect for the next connection accepted; in-flight sessions
+    /// were already past the allow-list check.
+    /// </summary>
+    public void UpdateIpAllowList(IpAllowList ipAllowList) => _ipAllowList = ipAllowList;
 
     public SmtpServer(
         SmtpListenerSettings settings,
