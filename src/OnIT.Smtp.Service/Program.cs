@@ -30,6 +30,7 @@ try
             services.AddSingleton<GraphCredentialFactory>();
             services.AddSingleton<GraphMailService>();
             services.AddHostedService<RelayWorker>();
+            services.AddHostedService<SecretExpiryWorker>();
         })
         .Build();
 

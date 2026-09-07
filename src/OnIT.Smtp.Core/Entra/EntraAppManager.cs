@@ -136,6 +136,60 @@ public sealed class EntraAppManager
         }
     }
 
+    /// <summary>
+    /// Issues a fresh client secret for the app and removes every other password credential,
+    /// so exactly one secret is valid afterward. Used by the config tool's "Renew secret now"
+    /// button (manual renewal only -- see SecretExpiryNotificationSettings).
+    /// </summary>
+    public async Task<SecretRenewalResult> RenewSecretAsync(string applicationObjectId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Renewing client secret for app {Id}.", applicationObjectId);
+
+        var newPassword = await _graph.Applications[applicationObjectId].AddPassword.PostAsync(new()
+        {
+            PasswordCredential = new PasswordCredential
+            {
+                DisplayName = $"OnIT-SMTP (renewed {DateTimeOffset.UtcNow:yyyy-MM-dd})",
+                EndDateTime = DateTimeOffset.UtcNow.AddMonths(24)
+            }
+        }, cancellationToken: ct) ?? throw new InvalidOperationException("Graph did not return the renewed client secret.");
+
+        var application = await _graph.Applications[applicationObjectId].GetAsync(rc =>
+        {
+            rc.QueryParameters.Select = new[] { "passwordCredentials" };
+        }, ct);
+
+        var oldKeyIds = application?.PasswordCredentials?
+            .Where(c => c.KeyId.HasValue && c.KeyId != newPassword.KeyId)
+            .Select(c => c.KeyId!.Value)
+            .ToList() ?? new List<Guid>();
+
+        foreach (var keyId in oldKeyIds)
+        {
+            try
+            {
+                await _graph.Applications[applicationObjectId].RemovePassword.PostAsync(new()
+                {
+                    KeyId = keyId
+                }, cancellationToken: ct);
+            }
+            catch (ODataError ex)
+            {
+                // Not fatal -- the new secret is already valid and in use. An old credential
+                // left behind just means it stays valid too until its own expiry.
+                _logger.LogWarning(ex, "Failed to remove old client secret {KeyId} after renewal.", keyId);
+            }
+        }
+
+        _logger.LogInformation("Client secret renewed; now expires {ExpiresOn}.", newPassword.EndDateTime);
+
+        return new SecretRenewalResult
+        {
+            ClientSecret = newPassword.SecretText!,
+            ClientSecretExpiresOn = newPassword.EndDateTime!.Value
+        };
+    }
+
     public static string BuildAdminConsentUrl(string tenantId, string appId) =>
         $"https://login.microsoftonline.com/{Uri.EscapeDataString(tenantId)}/adminconsent?client_id={Uri.EscapeDataString(appId)}";
 

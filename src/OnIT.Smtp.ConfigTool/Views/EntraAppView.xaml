@@ -24,6 +24,34 @@
                 </StackPanel>
             </GroupBox>
 
+            <GroupBox Header="Client secret" Visibility="{Binding IsConfigured, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ClientSecretExpiresOn, StringFormat='Expires: {0:yyyy-MM-dd}'}"/>
+                    <TextBlock Margin="0,4,0,8" FontWeight="SemiBold"
+                               Visibility="{Binding DaysUntilExpiry, Converter={StaticResource NullToVis}}"
+                               Foreground="{Binding DaysUntilExpiry, Converter={StaticResource ExpiryToBrush}}">
+                        <Run Text="{Binding DaysUntilExpiry, Mode=OneWay}"/>
+                        <Run Text=" day(s) remaining"/>
+                    </TextBlock>
+                    <Button Content="Renew secret now" Command="{Binding RenewSecretCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Expiry notifications" Visibility="{Binding IsConfigured, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="The service emails these recipients as the secret's expiry gets closer -- at 30, 15, 7, and 3 days out, and again if it actually expires."/>
+                    <CheckBox Content="Enabled" IsChecked="{Binding NotificationsEnabled}"/>
+                    <TextBlock Text="Notify (comma-separated email addresses)"/>
+                    <TextBox Text="{Binding NotificationRecipientsText, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Text="From address (optional -- defaults to the first enabled allowed sender)"/>
+                    <TextBox Text="{Binding NotificationFromAddress, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button Content="Save" Command="{Binding SaveNotificationSettingsCommand}" HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding NotificationStatusMessage}" Style="{StaticResource StatusLine}"/>
+                </StackPanel>
+            </GroupBox>
+
             <GroupBox Header="Create app registration">
                 <StackPanel>
                     <TextBlock Text="Tenant ID or domain (e.g. contoso.onmicrosoft.com)"/>

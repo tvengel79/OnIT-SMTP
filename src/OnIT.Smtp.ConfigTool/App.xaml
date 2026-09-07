@@ -11,6 +11,8 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
             <conv:InverseBooleanConverter x:Key="InverseBool"/>
             <conv:EnumToVisibilityConverter x:Key="EnumToVis"/>
+            <conv:DaysUntilExpiryToBrushConverter x:Key="ExpiryToBrush"/>
+            <conv:NullToVisibilityConverter x:Key="NullToVis"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

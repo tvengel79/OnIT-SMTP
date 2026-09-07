@@ -16,4 +16,5 @@ public sealed class AppConfiguration
     public SmtpListenerSettings SmtpListener { get; set; } = new();
     public LoggingSettings Logging { get; set; } = new();
     public AdvancedSettings Advanced { get; set; } = new();
+    public SecretExpiryNotificationSettings SecretExpiryNotifications { get; set; } = new();
 }

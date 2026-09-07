@@ -29,6 +29,11 @@ public partial class EntraAppViewModel : ObservableObject
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isBusy;
 
+    [ObservableProperty] private string _notificationRecipientsText = string.Empty;
+    [ObservableProperty] private string _notificationFromAddress = string.Empty;
+    [ObservableProperty] private bool _notificationsEnabled = true;
+    [ObservableProperty] private string _notificationStatusMessage = string.Empty;
+
     partial void OnSignInClientIdOverrideChanged(string value)
     {
         EntraSessionService.Instance.ClientIdOverride = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -42,9 +47,21 @@ public partial class EntraAppViewModel : ObservableObject
     public string? AdminConsentUrl => Settings.AdminConsentUrl;
     public bool CanOpenConsentUrl => !string.IsNullOrWhiteSpace(AdminConsentUrl);
 
+    public DateTimeOffset? ClientSecretExpiresOn => Settings.ClientSecretExpiresOn;
+
+    /// <summary>Null when there's no secret yet. Can be negative once expired.</summary>
+    public int? DaysUntilExpiry => Settings.ClientSecretExpiresOn is { } expiresOn
+        ? (int)Math.Floor((expiresOn - DateTimeOffset.UtcNow).TotalDays)
+        : null;
+
     public EntraAppViewModel()
     {
         if (Settings.IsConfigured) TenantId = Settings.TenantId;
+
+        var notify = ConfigurationContext.Instance.Current.SecretExpiryNotifications;
+        NotificationRecipientsText = string.Join(", ", notify.Recipients);
+        NotificationFromAddress = notify.FromAddress ?? string.Empty;
+        NotificationsEnabled = notify.Enabled;
     }
 
     [RelayCommand]
@@ -79,6 +96,7 @@ public partial class EntraAppViewModel : ObservableObject
             config.EntraApp.ClientSecretExpiresOn = result.ClientSecretExpiresOn;
             config.EntraApp.AdminConsentGranted = result.AdminConsentGranted;
             config.EntraApp.AdminConsentUrl = result.AdminConsentUrl;
+            config.SecretExpiryNotifications.NotifiedThresholdDays.Clear();
             ConfigurationContext.Instance.Save();
 
             StatusMessage = result.AdminConsentGranted
@@ -170,6 +188,68 @@ public partial class EntraAppViewModel : ObservableObject
         Process.Start(new ProcessStartInfo(AdminConsentUrl) { UseShellExecute = true });
     }
 
+    [RelayCommand]
+    private async Task RenewSecretAsync()
+    {
+        if (!IsConfigured) return;
+
+        if (MessageBox.Show(
+                "This issues a new client secret and removes the old one. The service will need to pick up the new secret (it reloads automatically, or reload it manually on the Service Status tab). Continue?",
+                "Renew client secret", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Signing in...";
+
+        try
+        {
+            var client = EntraSessionService.Instance.EnsureClient(Settings.TenantId, UseDeviceCodeSignIn,
+                message => Application.Current.Dispatcher.Invoke(() => StatusMessage = message));
+
+            StatusMessage = "Renewing client secret...";
+            var manager = new EntraAppManager(client, NullLogger<EntraAppManager>.Instance);
+            var result = await manager.RenewSecretAsync(Settings.ApplicationObjectId);
+
+            var config = ConfigurationContext.Instance.Current;
+            config.EntraApp.ProtectedClientSecret = ConfigurationContext.Instance.ProtectSecret(result.ClientSecret);
+            config.EntraApp.ClientSecretExpiresOn = result.ClientSecretExpiresOn;
+            config.SecretExpiryNotifications.NotifiedThresholdDays.Clear();
+            ConfigurationContext.Instance.Save();
+
+            if (PipeClientService.Instance.IsConnected)
+            {
+                await PipeClientService.Instance.ReloadConfigAsync();
+            }
+
+            StatusMessage = $"Secret renewed -- now expires {result.ClientSecretExpiresOn:yyyy-MM-dd}.";
+            RaiseAllChanged();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void SaveNotificationSettings()
+    {
+        var notify = ConfigurationContext.Instance.Current.SecretExpiryNotifications;
+        notify.Recipients = NotificationRecipientsText
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+        notify.FromAddress = string.IsNullOrWhiteSpace(NotificationFromAddress) ? null : NotificationFromAddress.Trim();
+        notify.Enabled = NotificationsEnabled;
+        ConfigurationContext.Instance.Save();
+
+        NotificationStatusMessage = "Saved.";
+    }
+
     private void RaiseAllChanged()
     {
         OnPropertyChanged(nameof(Settings));
@@ -178,5 +258,7 @@ public partial class EntraAppViewModel : ObservableObject
         OnPropertyChanged(nameof(AdminConsentGranted));
         OnPropertyChanged(nameof(AdminConsentUrl));
         OnPropertyChanged(nameof(CanOpenConsentUrl));
+        OnPropertyChanged(nameof(ClientSecretExpiresOn));
+        OnPropertyChanged(nameof(DaysUntilExpiry));
     }
 }
