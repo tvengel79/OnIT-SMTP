@@ -31,7 +31,7 @@ public sealed class EntraSessionService
     public string? ClientIdOverride { get; set; }
 
     public async Task<GraphServiceClient> EnsureClientAsync(
-        string tenantId, bool useDeviceCode, Action<string>? deviceCodePrompt = null, CancellationToken ct = default)
+        string tenantId, bool useDeviceCode, Action<string>? statusCallback = null, CancellationToken ct = default)
     {
         var effectiveClientId = string.IsNullOrWhiteSpace(ClientIdOverride) ? GraphWellKnown.DefaultSignInClientId : ClientIdOverride;
 
@@ -43,7 +43,7 @@ public sealed class EntraSessionService
         }
 
         var options = new EntraBootstrapOptions { TenantId = tenantId, UseDeviceCode = useDeviceCode, ClientIdOverride = ClientIdOverride };
-        var (client, _) = await _factory.CreateAsync(options, deviceCodePrompt, ct);
+        var (client, _) = await _factory.CreateAsync(options, statusCallback, ct);
         _client = client;
         _signedInTenantId = tenantId;
         _signedInClientId = effectiveClientId;

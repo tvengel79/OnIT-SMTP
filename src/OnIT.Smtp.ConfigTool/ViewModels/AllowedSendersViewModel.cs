@@ -45,17 +45,20 @@ public partial class AllowedSendersViewModel : ObservableObject
         }
 
         IsBusy = true;
+        // Accumulated (not overwritten) for this one operation, so the sign-in diagnostics
+        // below stay visible instead of being stomped by the final result message.
         StatusMessage = "Signing in and searching...";
         try
         {
-            var client = await EntraSessionService.Instance.EnsureClientAsync(tenantId, useDeviceCode: false, message => StatusMessage = message);
+            var client = await EntraSessionService.Instance.EnsureClientAsync(
+                tenantId, useDeviceCode: false, message => StatusMessage += Environment.NewLine + message);
             var directory = new EntraUserDirectory(client);
             var results = await directory.ListMailboxUsersAsync(string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm);
 
             SearchResults.Clear();
             foreach (var user in results) SearchResults.Add(user);
 
-            StatusMessage = $"{results.Count} mailbox user(s) found.";
+            StatusMessage += Environment.NewLine + $"{results.Count} mailbox user(s) found.";
         }
         catch (Exception ex)
         {
