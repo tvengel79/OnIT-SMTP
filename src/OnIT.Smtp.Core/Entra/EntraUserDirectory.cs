@@ -30,6 +30,10 @@ public sealed class EntraUserDirectory
             rc.QueryParameters.Select = new[] { "id", "displayName", "userPrincipalName", "mail", "accountEnabled" };
             rc.QueryParameters.Top = 999;
             rc.QueryParameters.Orderby = new[] { "displayName" };
+            // Combining $filter with $orderby on /users only works with these "advanced query"
+            // options both set -- without Count=true, Graph rejects it with "Sorting not
+            // supported for current query" even though the ConsistencyLevel header is present.
+            rc.QueryParameters.Count = true;
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 rc.QueryParameters.Search = $"\"displayName:{searchTerm}\" OR \"userPrincipalName:{searchTerm}\"";
