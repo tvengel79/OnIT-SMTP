@@ -1,0 +1,65 @@
+<UserControl x:Class="OnIT.Smtp.ConfigTool.Views.RemoteBridgeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="16">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+            <TextBlock Text="Remote Bridge" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="Push configuration to a Part 2 Docker bridge directly, and check its live status, instead of copying config.json onto its host by hand. Pair with a bridge once using the host, certificate fingerprint, and pairing token it printed to its own log (`docker logs`) on first boot -- the remote API is off unless enabled in the bridge's own config."/>
+
+            <GroupBox Header="Pair a new bridge">
+                <StackPanel>
+                    <TextBlock Text="Name (optional)"/>
+                    <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <StackPanel Width="420" Margin="0,0,8,0">
+                            <TextBlock Text="Host"/>
+                            <TextBox Text="{Binding NewHost, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Width="100">
+                            <TextBlock Text="Port"/>
+                            <TextBox Text="{Binding NewPort, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="Certificate SHA-256 fingerprint (from the bridge's boot log)" Margin="0,8,0,0"/>
+                    <TextBox Text="{Binding NewFingerprint, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Pairing token (from the bridge's boot log, shown once)" Margin="0,8,0,0"/>
+                    <TextBox Text="{Binding NewPairingToken, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <Button Content="Pair" Command="{Binding AddBridgeCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Paired bridges" Margin="0,12,0,0">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Push configuration" Command="{Binding PushConfigCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
+                        <Button Content="Refresh status" Command="{Binding RefreshStatusCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"/>
+                        <Button Content="Remove" Command="{Binding RemoveSelectedCommand}"/>
+                    </StackPanel>
+
+                    <ListBox ItemsSource="{Binding Bridges}" SelectedItem="{Binding SelectedBridge}" Height="120" DockPanel.Dock="Top"/>
+                </DockPanel>
+            </GroupBox>
+
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusLine}" Margin="0,8,0,0"/>
+
+            <GroupBox Header="Live status" Margin="0,12,0,0" Visibility="{Binding LiveStatus, Converter={StaticResource NullToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding LiveStatus.Listening, StringFormat='Listening: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.BindAddress, StringFormat='Bind address: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.Port, StringFormat='Port: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.StartedAt, StringFormat='Started at: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.MessagesRelayed, StringFormat='Messages relayed: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.MessagesRejected, StringFormat='Messages rejected: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.ConnectionsRejectedByIpAllowList, StringFormat='Connections rejected by IP allow list: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.EntraAppConfigured, StringFormat='Entra app configured: {0}'}"/>
+                    <TextBlock Text="{Binding LiveStatus.AdminConsentGranted, StringFormat='Admin consent granted: {0}'}"/>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

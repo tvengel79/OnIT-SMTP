@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -11,7 +11,10 @@
          OnIT.Smtp.Service it has no Windows Service hosting and no named-pipe control channel
          for a local WPF config tool: it is seeded once from a config directory exported by
          the Windows config tool (see ConfigPaths' ONITSMTP_HOME override) and otherwise runs
-         headless, logging to the console (for `docker logs`) and to file. -->
+         headless, logging to the console (for `docker logs`) and to file. Sdk.Web (rather than
+         Sdk.Worker) only because the optional remote config/status API (RemoteApiSettings,
+         off by default) needs Kestrel + minimal APIs; with that API disabled the process hosts
+         exactly the same background workers as before, nothing web-specific runs. -->
   </PropertyGroup>
 
   <ItemGroup>

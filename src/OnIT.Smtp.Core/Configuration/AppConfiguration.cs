@@ -17,4 +17,5 @@ public sealed class AppConfiguration
     public LoggingSettings Logging { get; set; } = new();
     public AdvancedSettings Advanced { get; set; } = new();
     public SecretExpiryNotificationSettings SecretExpiryNotifications { get; set; } = new();
+    public RemoteApiSettings RemoteApi { get; set; } = new();
 }

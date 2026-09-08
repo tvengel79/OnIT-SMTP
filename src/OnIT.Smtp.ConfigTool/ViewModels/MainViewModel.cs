@@ -12,6 +12,7 @@ public sealed class MainViewModel
     public TestEmailViewModel TestEmail { get; } = new();
     public ServiceStatusViewModel ServiceStatus { get; } = new();
     public DockerExportViewModel DockerExport { get; } = new();
+    public RemoteBridgeViewModel RemoteBridge { get; } = new();
     public AboutViewModel About { get; } = new();
 
     public MainViewModel()

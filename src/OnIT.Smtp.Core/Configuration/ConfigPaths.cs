@@ -20,6 +20,20 @@ public static class ConfigPaths
 
     public static string DefaultLogDirectory => Path.Combine(RootDirectory, "logs");
 
+    /// <summary>Self-signed TLS certificate the bridge's remote API listens with -- see RemoteApiCertificateProvider.</summary>
+    public static string RemoteApiCertificatePath => Path.Combine(RootDirectory, "remote-api-cert.pfx");
+
+    /// <summary>Bearer token the bridge's remote API requires -- see RemoteApiTokenProvider.</summary>
+    public static string RemoteApiTokenPath => Path.Combine(RootDirectory, "remote-api-token.txt");
+
+    /// <summary>
+    /// Config tool-only: remote bridges the operator has paired with (host, port, pinned
+    /// certificate fingerprint, protected pairing token). Deliberately separate from
+    /// config.json -- the Service/Bridge never read this file, it has nothing to do with the
+    /// relay configuration they run.
+    /// </summary>
+    public static string RemoteBridgesFilePath => Path.Combine(RootDirectory, "remote-bridges.json");
+
     public static void EnsureDirectoriesExist()
     {
         Directory.CreateDirectory(RootDirectory);

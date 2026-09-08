@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OnIT.Smtp.Core.Configuration;
+using OnIT.Smtp.Core.Ipc;
 using OnIT.Smtp.Core.Mail;
 using OnIT.Smtp.Core.Networking;
 using OnIT.Smtp.Core.Runtime;
@@ -129,7 +130,15 @@ public sealed class BridgeRelayWorker : BackgroundService
         };
     }
 
-    private async Task ReloadConfigAsync(CancellationToken ct)
+    /// <summary>
+    /// Re-reads config.json and applies it. Called both by the file watcher (picks up any
+    /// edit to the mounted config, including one just written by the remote push API) and
+    /// directly by the remote API's config-push endpoint so it can report success/failure
+    /// immediately rather than relying solely on the watcher's debounce. Safe to call twice in
+    /// a row for the same content -- the listener only restarts when its settings actually
+    /// changed since the previous call.
+    /// </summary>
+    public async Task<OperationResult> ReloadConfigAsync(CancellationToken ct)
     {
         try
         {
@@ -154,10 +163,32 @@ public sealed class BridgeRelayWorker : BackgroundService
             }
 
             _logger.LogInformation("Configuration reloaded.");
+            return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to reload configuration.");
+            return OperationResult.Fail(ex.Message);
         }
+    }
+
+    public ServiceStatus GetStatus()
+    {
+        AppConfiguration snapshot;
+        lock (_configLock) snapshot = _config;
+
+        var stats = _smtpServer?.Stats;
+        return new ServiceStatus
+        {
+            Listening = _smtpServer?.IsListening ?? false,
+            BindAddress = snapshot.SmtpListener.BindAddress,
+            Port = snapshot.SmtpListener.Port,
+            StartedAt = stats?.StartedAt ?? DateTimeOffset.UtcNow,
+            MessagesRelayed = stats?.MessagesRelayed ?? 0,
+            MessagesRejected = stats?.MessagesRejected ?? 0,
+            ConnectionsRejectedByIpAllowList = stats?.ConnectionsRejectedByIpAllowList ?? 0,
+            EntraAppConfigured = snapshot.EntraApp.IsConfigured,
+            AdminConsentGranted = snapshot.EntraApp.AdminConsentGranted
+        };
     }
 }

@@ -22,12 +22,14 @@ src/
   OnIT.Smtp.ConfigTool/  WPF admin app: create/delete the Entra app registration, manage
                           allowed senders (picked from Entra), the IP allow list, SMTP
                           listener settings, logging (with a live log viewer), test-send,
-                          service install/start/stop, and Docker config export.
+                          service install/start/stop, Docker config export, and pushing
+                          config to / reading status from a paired Part 2 bridge remotely.
   OnIT.Smtp.Bridge/       Part 2: the cross-platform relay host (plain net8.0, runs in
                           Docker on Linux/NAS). Same SMTP listener + Graph relay logic as
                           OnIT.Smtp.Service, minus the Windows-only named-pipe control
                           channel. Seeded from a config directory copied or exported from
-                          Part 1. Includes its own Dockerfile.
+                          Part 1, or by the config tool pushing to its optional (off by
+                          default) HTTPS remote API. Includes its own Dockerfile.
 tests/
   OnIT.Smtp.Core.Tests/  xUnit tests for the IP allow list and MIME parsing/relay logic.
 deploy/                  PowerShell scripts to publish and install/uninstall the service.
@@ -218,3 +220,41 @@ The client secret expiry notification worker runs in the bridge too, so a Part 2
 deployment still gets the 30/15/7/3/0-day warning emails; renewal itself still happens from
 the Part 1 config tool (it's the one with the delegated Entra sign-in), after which the
 refreshed `config.json` just needs to reach the mounted volume again.
+
+### Remote config push (alternative to copying files)
+
+Instead of copying `config.json`/`secret.key` onto the bridge's host by hand every time
+something changes, the bridge can expose an HTTPS API the config tool pushes to directly and
+reads live status from -- the **Remote Bridge** tab. It's off by default: turning it on adds a
+network-facing endpoint, so it's an explicit opt-in per bridge, set in that bridge's own
+`config.json`:
+
+```json
+"RemoteApi": { "Enabled": true, "Port": 8443 }
+```
+
+On the next start with the API enabled, the bridge generates (once) a self-signed TLS
+certificate and a random pairing token, and logs both:
+
+```bash
+docker logs onit-smtp-bridge
+# Remote API certificate generated. SHA-256 fingerprint (pin this in the config tool): AA:BB:...
+# Remote API pairing token generated -- shown once, copy it into the config tool now: 3F9C...
+```
+
+There's no CA involved (a self-signed cert has nowhere else to get trust from), so the config
+tool doesn't validate a certificate chain -- it pins the exact fingerprint the operator enters,
+the same trust model as an SSH host key. Copy that fingerprint and the token (shown only on
+the boot where they're generated -- note them down) into the config tool's **Remote Bridge**
+tab, along with the bridge's host and port, and click **Pair**. The pairing token is stored
+encrypted at rest (same protector as the Entra client secret), never in plain text.
+
+Once paired, **Push configuration** sends the current config to the bridge, which saves it and
+reloads immediately (the same effect as replacing config.json on the mounted volume by hand).
+The Entra client secret travels as plaintext in this one request -- safe, since the connection
+is already authenticated and TLS-pinned -- rather than as the ciphertext config.json normally
+stores it as: the config tool's and the bridge's `secret.key` files are independent, so
+ciphertext made with one could never be decrypted by the other. The bridge re-encrypts the
+secret locally with its own key before saving, so pushing a config never requires transferring
+`secret.key` at all. **Refresh status** reads the same live status (listening state, message
+counts, IP allow-list rejections) the local named-pipe IPC exposes to the Windows Service.

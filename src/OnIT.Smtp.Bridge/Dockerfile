@@ -18,7 +18,10 @@ COPY src/OnIT.Smtp.Bridge/ src/OnIT.Smtp.Bridge/
 # was reported missing again at publish time.
 RUN dotnet publish src/OnIT.Smtp.Bridge/OnIT.Smtp.Bridge.csproj -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0
+# The ASP.NET Core shared runtime (rather than the plain dotnet/runtime image) because the
+# optional remote config/status API needs it -- see RemoteApiSettings; with that API disabled
+# nothing web-specific actually runs, but the assemblies still need to be present.
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app .
 
@@ -27,5 +30,9 @@ VOLUME ["/config"]
 
 # Default SMTP listener port -- override in config.json's SmtpListener section if changed.
 EXPOSE 25
+
+# Only reachable if RemoteApiSettings.Enabled is turned on in config.json (off by default) --
+# override in config.json's RemoteApi section if a different port is configured.
+EXPOSE 8443
 
 ENTRYPOINT ["dotnet", "OnIT.Smtp.Bridge.dll"]
